@@ -1,79 +1,100 @@
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { FileText, Wallet, Link2, ArrowUpRight } from "lucide-react";
+import { alpha } from "@mui/material/styles";
+import { DsCard, DsCardContent, DsBox, DsStack, DsTypography, DsButton, PALETTE } from "@am92/react-design-system";
 import { TURNOVER, MONTHS, CONNECTORS } from "../data/calculations.js";
 import { Stat } from "./Small.jsx";
 
 export function TurnoverCard() {
   const data = TURNOVER.map((v, i) => ({ m: MONTHS[i], v }));
   return (
-    <div className="rounded-xl p-5 bg-navy-panel border border-hairline">
-      <div className="flex items-center gap-2 mb-3">
-        <FileText size={16} className="text-gold" />
-        <span className="font-disp text-[13.5px] font-semibold text-paper">GST Turnover Trend</span>
-      </div>
-      <div className="h-[110px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
-            <XAxis dataKey="m" tick={{ fill: "#8AA0C4", fontSize: 9.5 }} axisLine={false} tickLine={false} interval={1} />
-            <YAxis hide />
-            <Bar dataKey="v" radius={[3, 3, 0, 0]} fill="#E8C468" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="flex justify-between mt-2">
-        <Stat label="12-mo avg" value="₹10.0L" />
-        <Stat label="YoY growth" value="+18%" colorClass="text-cp-green" />
-      </div>
-    </div>
+    <DsCard variant="outlined" sx={{ height: "100%" }}>
+      <DsCardContent>
+        <DsStack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
+          <FileText size={16} color={PALETTE.primary} />
+          <DsTypography variant="headingBoldExtraSmall">GST Turnover Trend</DsTypography>
+        </DsStack>
+        <DsBox sx={{ height: 110 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
+              <XAxis dataKey="m" tick={{ fill: PALETTE.secondaryGrey70, fontSize: 9.5 }} axisLine={false} tickLine={false} interval={1} />
+              <YAxis hide domain={[0, "dataMax"]} />
+              <Bar dataKey="v" radius={[3, 3, 0, 0]} fill={PALETTE.primary} />
+            </BarChart>
+          </ResponsiveContainer>
+        </DsBox>
+        <DsStack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
+          <Stat label="12-mo avg" value="₹10.0L" />
+          <Stat label="YoY growth" value="+18%" color={PALETTE.successGreen} />
+        </DsStack>
+      </DsCardContent>
+    </DsCard>
   );
 }
 
 export function WorkingCapitalCard() {
   return (
-    <div className="rounded-xl p-5 bg-navy-panel border border-gold">
-      <div className="flex items-center gap-2 mb-3">
-        <Wallet size={16} className="text-gold" />
-        <span className="font-disp text-[13.5px] font-semibold text-paper">Working Capital Recommendation</span>
-      </div>
-      <div className="font-mono font-disp text-[24px] font-bold text-gold-soft">₹8.0L</div>
-      <div className="text-[11.5px] text-ink-muted mb-2.5">Overdraft facility · 12-month tenure</div>
-      <ul className="text-[11.5px] text-paper leading-loose pl-3.5 list-disc">
-        <li>Covers projected Dec shortfall with buffer</li>
-        <li>Sized to 0.8× average monthly turnover</li>
-        <li>Interest-only draws against filed GST invoices</li>
-      </ul>
-      <button className="mt-3 w-full flex items-center justify-center gap-1 rounded-lg py-2.5 bg-gold text-navy-deep text-[12.5px] font-semibold border-none cursor-pointer">
-        Send offer <ArrowUpRight size={14} />
-      </button>
-    </div>
+    <DsCard variant="outlined" sx={{ height: "100%", borderColor: "primary.main", bgcolor: alpha(PALETTE.primary, 0.03) }}>
+      <DsCardContent>
+        <DsStack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
+          <Wallet size={16} color={PALETTE.primary} />
+          <DsTypography variant="headingBoldExtraSmall">Working Capital Recommendation</DsTypography>
+        </DsStack>
+        <DsTypography variant="displayBoldSmall" color="primary.main">₹8.0L</DsTypography>
+        <DsTypography variant="supportRegularInfo" color="text.secondary" sx={{ mb: 1.5 }}>
+          Overdraft facility · 12-month tenure
+        </DsTypography>
+        <DsBox component="ul" sx={{ m: 0, pl: 2.5, "& li": { mb: 0.5 } }}>
+          <DsTypography component="li" variant="supportRegularInfo">Covers projected Dec shortfall with buffer</DsTypography>
+          <DsTypography component="li" variant="supportRegularInfo">Sized to 0.8× average monthly turnover</DsTypography>
+          <DsTypography component="li" variant="supportRegularInfo">Interest-only draws against filed GST invoices</DsTypography>
+        </DsBox>
+        <DsButton variant="contained" color="primary" fullWidth endIcon={<ArrowUpRight size={14} />} sx={{ mt: 1.5 }}>
+          Send offer
+        </DsButton>
+      </DsCardContent>
+    </DsCard>
   );
 }
 
 export function ConnectorsCard() {
   return (
-    <div className="rounded-xl p-5 bg-navy-panel border border-hairline">
-      <div className="flex items-center gap-2 mb-3">
-        <Link2 size={16} className="text-gold" />
-        <span className="font-disp text-[13.5px] font-semibold text-paper">Connected Sources</span>
-      </div>
-      <div className="flex flex-col gap-2">
-        {CONNECTORS.map((c) => (
-          <div
-            key={c.name}
-            className={`conn-pill flex items-center justify-between rounded-lg px-3 py-2 border ${
-              c.connected ? "border-cp-green bg-cp-green/10" : "border-hairline"
-            }`}
-          >
-            <div>
-              <div className="text-[12px] font-semibold text-paper">{c.name}</div>
-              <div className="text-[10.5px] text-ink-muted">{c.desc}</div>
-            </div>
-            <span className={`font-mono text-[10px] ${c.connected ? "text-cp-green" : "text-ink-muted"}`}>
-              {c.connected ? "Connected" : "Connect"}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
+    <DsCard variant="outlined" sx={{ height: "100%" }}>
+      <DsCardContent>
+        <DsStack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
+          <Link2 size={16} color={PALETTE.primary} />
+          <DsTypography variant="headingBoldExtraSmall">Connected Sources</DsTypography>
+        </DsStack>
+        <DsStack spacing={1}>
+          {CONNECTORS.map((c) => (
+            <DsStack
+              key={c.name}
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{
+                px: 1.5,
+                py: 1,
+                borderRadius: 1.5,
+                border: "1px solid",
+                borderColor: c.connected ? "success.main" : "divider",
+                bgcolor: c.connected ? PALETTE.successGreenNeutralLight : "transparent",
+              }}
+            >
+              <DsBox>
+                <DsTypography variant="bodyBoldSmall">{c.name}</DsTypography>
+                <DsTypography variant="supportRegularMetadata" color="text.secondary">{c.desc}</DsTypography>
+              </DsBox>
+              <DsTypography
+                variant="supportRegularMetadata"
+                sx={{ color: c.connected ? "success.main" : "text.secondary" }}
+              >
+                {c.connected ? "Connected" : "Connect"}
+              </DsTypography>
+            </DsStack>
+          ))}
+        </DsStack>
+      </DsCardContent>
+    </DsCard>
   );
 }

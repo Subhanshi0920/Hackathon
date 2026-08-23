@@ -1,3 +1,4 @@
+import { DsBox, DsGrid, DsTypography, PALETTE } from "@am92/react-design-system";
 import Header from "../components/Header.jsx";
 import FilingPulse from "../components/FilingPulse.jsx";
 import HealthScoreCard from "../components/HealthScoreCard.jsx";
@@ -5,28 +6,38 @@ import CashFlowCard from "../components/CashFlowCard.jsx";
 import { TurnoverCard, WorkingCapitalCard, ConnectorsCard } from "../components/SecondaryCards.jsx";
 
 export default function Dashboard() {
-    return (
-        <div className="min-h-screen bg-navy-deep text-paper font-body">
-            <div className="w-full px-6 py-6 md:px-10 md:py-8 max-w-[1180px] mx-auto">
-                <Header />
+  return (
+    <DsBox sx={{ minHeight: "100vh", bgcolor: PALETTE.secondaryGrey10 }}>
+      <DsBox sx={{ maxWidth: 1180, mx: "auto", px: { xs: 3, md: 5 }, py: { xs: 3, md: 4 } }}>
+        <Header />
 
-                <FilingPulse />
+        <FilingPulse />
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
-                    <HealthScoreCard />
-                    <CashFlowCard />
-                </div>
+        <DsGrid container spacing={2.5} sx={{ mb: 2.5 }}>
+          <DsGrid size={{ xs: 12, md: 4 }}>
+            <HealthScoreCard />
+          </DsGrid>
+          <DsGrid size={{ xs: 12, md: 8 }}>
+            <CashFlowCard />
+          </DsGrid>
+        </DsGrid>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <TurnoverCard />
-                    <WorkingCapitalCard />
-                    <ConnectorsCard />
-                </div>
+        <DsGrid container spacing={2.5}>
+          <DsGrid size={{ xs: 12, md: 4 }}>
+            <TurnoverCard />
+          </DsGrid>
+          <DsGrid size={{ xs: 12, md: 4 }}>
+            <WorkingCapitalCard />
+          </DsGrid>
+          <DsGrid size={{ xs: 12, md: 4 }}>
+            <ConnectorsCard />
+          </DsGrid>
+        </DsGrid>
 
-                <div className="text-center mt-8 text-[10.5px] text-ink-muted">
-                    Demo data — for hackathon presentation purposes only.
-                </div>
-            </div>
-        </div>
-    );
+        <DsTypography variant="supportRegularMetadata" color="text.secondary" sx={{ textAlign: "center", mt: 4 }}>
+          Demo data — for hackathon presentation purposes only.
+        </DsTypography>
+      </DsBox>
+    </DsBox>
+  );
 }

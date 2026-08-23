@@ -1,18 +1,27 @@
+import { DsBox, DsTypography } from "@am92/react-design-system";
+import { PALETTE } from "@am92/react-design-system";
+
 export function Legend({ color, label }) {
   return (
-    <div className="flex items-center gap-1.5">
-      <div className="rounded-sm w-[9px] h-[9px]" style={{ background: color }} />
-      <span className="text-[11px] text-ink-muted">{label}</span>
-    </div>
+    <DsBox sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+      <DsBox sx={{ width: 9, height: 9, borderRadius: 0.5, bgcolor: color }} />
+      <DsTypography variant="supportRegularMetadata" color="text.secondary">
+        {label}
+      </DsTypography>
+    </DsBox>
   );
 }
 
-export function Stat({ label, value, colorClass }) {
+export function Stat({ label, value, color }) {
   return (
-    <div>
-      <div className={`font-mono text-[13px] font-semibold ${colorClass || "text-paper"}`}>{value}</div>
-      <div className="text-[10px] text-ink-muted">{label}</div>
-    </div>
+    <DsBox>
+      <DsTypography variant="bodyBoldSmall" sx={{ color: color || "text.primary" }}>
+        {value}
+      </DsTypography>
+      <DsTypography variant="supportRegularMetadata" color="text.secondary">
+        {label}
+      </DsTypography>
+    </DsBox>
   );
 }
 
@@ -20,10 +29,10 @@ export function ScoreGauge({ score }) {
   const r = 30;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(100, score)) / 100;
-  const color = score >= 70 ? "#3FA796" : score >= 45 ? "#C9962C" : "#E0554F";
+  const color = score >= 70 ? PALETTE.successGreen : score >= 45 ? PALETTE.warningOrange : PALETTE.errorRed;
   return (
     <svg width="72" height="72" viewBox="0 0 72 72">
-      <circle cx="36" cy="36" r={r} stroke="#24406B" strokeWidth="7" fill="none" />
+      <circle cx="36" cy="36" r={r} stroke={PALETTE.secondaryGrey30} strokeWidth="7" fill="none" />
       <circle
         cx="36"
         cy="36"

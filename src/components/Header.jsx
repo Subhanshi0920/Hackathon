@@ -1,29 +1,48 @@
 import { Landmark, CheckCircle2 } from "lucide-react";
+import { DsBox, DsStack, DsTypography, DsChip } from "@am92/react-design-system";
 import { BORROWER } from "../data/calculations.js";
 
 export default function Header() {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 pb-6 mb-6 border-b border-hairline">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center rounded w-9 h-9 bg-gold">
-          <Landmark size={19} className="text-navy-deep" />
-        </div>
-        <div>
-          <div className="font-disp text-[17px] font-bold tracking-wide text-paper">CreditPulse</div>
-          <div className="font-mono text-[11px] text-ink-muted">SME Lending Intelligence</div>
-        </div>
-      </div>
+    <DsStack
+      direction="row"
+      flexWrap="wrap"
+      justifyContent="space-between"
+      alignItems="center"
+      gap={2}
+      sx={{ pb: 3, mb: 3, borderBottom: "1px solid", borderColor: "divider" }}
+    >
+      <DsStack direction="row" spacing={1.5} alignItems="center">
+        <DsBox
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 36,
+            height: 36,
+            borderRadius: 1,
+            bgcolor: "primary.main",
+          }}
+        >
+          <Landmark size={19} color="#fff" />
+        </DsBox>
+        <DsBox>
+          <DsTypography variant="headingBoldSmall">CreditPulse</DsTypography>
+          <DsTypography variant="supportRegularMetadata" color="text.secondary">
+            SME Lending Intelligence
+          </DsTypography>
+        </DsBox>
+      </DsStack>
 
-      <div className="flex items-center gap-4">
-        <div className="text-right">
-          <div className="text-[13px] font-semibold text-paper">{BORROWER.name}</div>
-          <div className="font-mono text-[11px] text-ink-muted">GSTIN {BORROWER.gstin}</div>
-        </div>
-        <div className="rounded-full flex items-center gap-1 px-3 py-1 bg-cp-green/10 border border-cp-green">
-          <CheckCircle2 size={13} className="text-cp-green" />
-          <span className="font-mono text-[11px] text-cp-green">Live sync</span>
-        </div>
-      </div>
-    </div>
+      <DsStack direction="row" spacing={2} alignItems="center">
+        <DsBox sx={{ textAlign: "right" }}>
+          <DsTypography variant="bodyBoldSmall">{BORROWER.name}</DsTypography>
+          <DsTypography variant="supportRegularMetadata" color="text.secondary">
+            GSTIN {BORROWER.gstin}
+          </DsTypography>
+        </DsBox>
+        <DsChip icon={<CheckCircle2 size={13} />} label="Live sync" color="success" size="small" />
+      </DsStack>
+    </DsStack>
   );
 }

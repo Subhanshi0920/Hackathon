@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ShieldCheck, Sparkles } from "lucide-react";
+import { DsCard, DsCardContent, DsBox, DsStack, DsTypography, DsButton, PALETTE } from "@am92/react-design-system";
 import { ScoreGauge } from "./Small.jsx";
 import {
   TURNOVER,
@@ -77,34 +78,44 @@ export default function HealthScoreCard() {
   }
 
   return (
-    <div className="rounded-xl p-5 flex flex-col bg-navy-panel border border-hairline">
-      <div className="flex items-center gap-2 mb-4">
-        <ShieldCheck size={16} className="text-gold" />
-        <span className="font-disp text-[13.5px] font-semibold text-paper">AI Business Health Score</span>
-      </div>
+    <DsCard variant="outlined" sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <DsCardContent sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
+        <DsStack direction="row" spacing={1} alignItems="center" sx={{ mb: 2.5 }}>
+          <ShieldCheck size={16} color={PALETTE.primary} />
+          <DsTypography variant="headingBoldExtraSmall">AI Business Health Score</DsTypography>
+        </DsStack>
 
-      <div className="flex items-center gap-4 mb-4">
-        <ScoreGauge score={insight.score} />
-        <div>
-          <div className="font-mono font-disp text-[30px] font-bold text-paper">{insight.score}</div>
-          <div className="text-[12px] font-semibold text-cp-green">{insight.band}</div>
-        </div>
-      </div>
+        <DsStack direction="row" spacing={2} alignItems="center" sx={{ mb: 2.5 }}>
+          <ScoreGauge score={insight.score} />
+          <DsBox>
+            <DsTypography variant="displayBoldSmall">{insight.score}</DsTypography>
+            <DsTypography variant="bodyBoldSmall" sx={{ color: PALETTE.successGreen }}>
+              {insight.band}
+            </DsTypography>
+          </DsBox>
+        </DsStack>
 
-      <p className="text-[12.5px] leading-relaxed text-ink-muted flex-1">{insight.narrative}</p>
+        <DsTypography variant="bodyRegularSmall" color="text.secondary" sx={{ flex: 1 }}>
+          {insight.narrative}
+        </DsTypography>
 
-      {error && <p className="text-[11px] text-cp-red mt-2">{error}</p>}
+        {error && (
+          <DsTypography variant="supportRegularMetadata" color="error.main" sx={{ mt: 1 }}>
+            {error}
+          </DsTypography>
+        )}
 
-      <button
-        onClick={generateInsight}
-        disabled={loading}
-        className={`mt-4 flex items-center justify-center gap-2 rounded-lg py-2.5 text-[12.5px] font-semibold border-none ${
-          loading ? "bg-navy-panel-2 text-ink-muted cursor-default" : "bg-gold text-navy-deep cursor-pointer"
-        }`}
-      >
-        <Sparkles size={14} />
-        {loading ? "Analyzing filings…" : generated ? "Regenerate insight" : "Generate AI insight"}
-      </button>
-    </div>
+        <DsButton
+          onClick={generateInsight}
+          loading={loading}
+          variant="contained"
+          color="primary"
+          startIcon={<Sparkles size={14} />}
+          sx={{ mt: 2.5 }}
+        >
+          {loading ? "Analyzing filings…" : generated ? "Regenerate insight" : "Generate AI insight"}
+        </DsButton>
+      </DsCardContent>
+    </DsCard>
   );
 }

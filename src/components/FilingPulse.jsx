@@ -1,3 +1,4 @@
+import { DsCard, DsCardContent, DsBox, DsStack, DsTypography, PALETTE } from "@am92/react-design-system";
 import { MONTHS, FILING_STATUS } from "../data/calculations.js";
 import { Legend } from "./Small.jsx";
 
@@ -6,39 +7,46 @@ export default function FilingPulse() {
   const compliancePct = Math.round((onTimeCount / FILING_STATUS.length) * 100);
 
   return (
-    <div className="rounded-xl p-5 md:p-6 mb-6 bg-navy-panel border border-hairline">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <div className="font-disp text-[15px] font-semibold text-paper">12-Month Filing Pulse</div>
-          <div className="text-[12.5px] text-ink-muted mt-0.5">Every GSTR-3B filing, on schedule or not</div>
-        </div>
-        <div className="text-right">
-          <div className="font-mono font-disp text-[22px] font-bold text-gold-soft">{compliancePct}%</div>
-          <div className="text-[11px] text-ink-muted">on-time compliance</div>
-        </div>
-      </div>
+    <DsCard variant="outlined" sx={{ mb: 3 }}>
+      <DsCardContent>
+        <DsStack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 3 }}>
+          <DsBox>
+            <DsTypography variant="headingBoldExtraSmall">12-Month Filing Pulse</DsTypography>
+            <DsTypography variant="supportRegularInfo" color="text.secondary" sx={{ mt: 0.5 }}>
+              Every GSTR-3B filing, on schedule or not
+            </DsTypography>
+          </DsBox>
+          <DsBox sx={{ textAlign: "right" }}>
+            <DsTypography variant="headingBoldMedium" color="primary.main">
+              {compliancePct}%
+            </DsTypography>
+            <DsTypography variant="supportRegularMetadata" color="text.secondary">
+              on-time compliance
+            </DsTypography>
+          </DsBox>
+        </DsStack>
 
-      <div className="flex items-end gap-2 md:gap-3 h-16">
-        {FILING_STATUS.map((s, i) => {
-          const color = s === "on" ? "#3FA796" : s === "late" ? "#C9962C" : "#E0554F";
-          const h = s === "on" ? 54 : s === "late" ? 38 : 20;
-          return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-2">
-              <div
-                className="tick rounded-sm w-full opacity-90"
-                style={{ height: h, background: color }}
-              />
-              <div className="font-mono text-[10px] text-ink-muted">{MONTHS[i]}</div>
-            </div>
-          );
-        })}
-      </div>
+        <DsStack direction="row" alignItems="flex-end" spacing={1.5} sx={{ height: 64 }}>
+          {FILING_STATUS.map((s, i) => {
+            const color = s === "on" ? PALETTE.tertiary100 : s === "late" ? PALETTE.primary : PALETTE.errorRed;
+            const h = s === "on" ? 54 : s === "late" ? 38 : 20;
+            return (
+              <DsBox key={i} sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                <DsBox sx={{ width: "100%", height: h, borderRadius: 0.5, bgcolor: color, opacity: 0.9 }} />
+                <DsTypography variant="supportRegularMetadata" color="text.secondary">
+                  {MONTHS[i]}
+                </DsTypography>
+              </DsBox>
+            );
+          })}
+        </DsStack>
 
-      <div className="flex items-center gap-5 mt-4">
-        <Legend color="#3FA796" label="Filed on time" />
-        <Legend color="#C9962C" label="Filed late" />
-        <Legend color="#E0554F" label="Missed" />
-      </div>
-    </div>
+        <DsStack direction="row" spacing={3} sx={{ mt: 3 }}>
+          <Legend color={PALETTE.tertiary100} label="Filed on time" />
+          <Legend color={PALETTE.primary} label="Filed late" />
+          <Legend color={PALETTE.errorRed} label="Missed" />
+        </DsStack>
+      </DsCardContent>
+    </DsCard>
   );
 }

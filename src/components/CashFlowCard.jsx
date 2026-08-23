@@ -3,6 +3,7 @@ import {
   ResponsiveContainer, ReferenceLine,
 } from "recharts";
 import { TrendingUp, AlertTriangle, Info } from "lucide-react";
+import { DsCard, DsCardContent, DsBox, DsStack, DsTypography, PALETTE } from "@am92/react-design-system";
 import { CASHFLOW, describeCashFlowModel } from "../data/calculations.js";
 
 // recharts trick for a shaded band: stack a transparent "low" area, then a
@@ -18,16 +19,20 @@ function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   const row = payload[0]?.payload;
   return (
-    <div className="rounded-lg px-3 py-2 text-[12px]" style={{ background: "#16335C", border: "1px solid #24406B" }}>
-      <div className="text-paper font-semibold mb-1">{label}</div>
-      {row.actual != null && <div className="text-gold-soft">Actual: ₹{row.actual}L</div>}
+    <DsBox sx={{ borderRadius: 1.5, px: 1.5, py: 1, bgcolor: "background.paper", border: "1px solid", borderColor: "divider" }}>
+      <DsTypography variant="bodyBoldSmall" sx={{ mb: 0.5 }}>{label}</DsTypography>
+      {row.actual != null && (
+        <DsTypography variant="supportRegularMetadata" sx={{ color: PALETTE.primary }}>Actual: ₹{row.actual}L</DsTypography>
+      )}
       {row.base != null && (
         <>
-          <div className="text-cp-green">Base: ₹{row.base}L</div>
-          <div className="text-ink-muted">Range: ₹{row.low}L to ₹{row.high}L</div>
+          <DsTypography variant="supportRegularMetadata" sx={{ color: PALETTE.tertiary100, display: "block" }}>Base: ₹{row.base}L</DsTypography>
+          <DsTypography variant="supportRegularMetadata" color="text.secondary" sx={{ display: "block" }}>
+            Range: ₹{row.low}L to ₹{row.high}L
+          </DsTypography>
         </>
       )}
-    </div>
+    </DsBox>
   );
 }
 
@@ -36,60 +41,62 @@ export default function CashFlowCard() {
   const model = describeCashFlowModel();
 
   return (
-    <div className="rounded-xl p-5 md:col-span-2 bg-navy-panel border border-hairline">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <TrendingUp size={16} className="text-gold" />
-          <span className="font-disp text-[13.5px] font-semibold text-paper">Cash-Flow Forecast</span>
-        </div>
-        <span className="font-mono text-[11px] text-ink-muted">₹ lakhs, net monthly</span>
-      </div>
+    <DsCard variant="outlined" sx={{ height: "100%" }}>
+      <DsCardContent>
+        <DsStack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
+          <DsStack direction="row" spacing={1} alignItems="center">
+            <TrendingUp size={16} color={PALETTE.primary} />
+            <DsTypography variant="headingBoldExtraSmall">Cash-Flow Forecast</DsTypography>
+          </DsStack>
+          <DsTypography variant="supportRegularMetadata" color="text.secondary">₹ lakhs, net monthly</DsTypography>
+        </DsStack>
 
-      <div className="h-[200px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-            <defs>
-              <linearGradient id="actualFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#E8C468" stopOpacity={0.45} />
-                <stop offset="100%" stopColor="#E8C468" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke="#24406B" strokeDasharray="3 5" vertical={false} />
-            <XAxis dataKey="m" tick={{ fill: "#8AA0C4", fontSize: 11 }} axisLine={{ stroke: "#24406B" }} tickLine={false} />
-            <YAxis tick={{ fill: "#8AA0C4", fontSize: 11 }} axisLine={false} tickLine={false} />
-            <ReferenceLine y={0} stroke="#E0554F" strokeDasharray="2 3" />
-            <Tooltip content={<CustomTooltip />} />
+        <DsBox sx={{ height: 200 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+              <defs>
+                <linearGradient id="actualFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={PALETTE.primary} stopOpacity={0.35} />
+                  <stop offset="100%" stopColor={PALETTE.primary} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke={PALETTE.secondaryGrey20} strokeDasharray="3 5" vertical={false} />
+              <XAxis dataKey="m" tick={{ fill: PALETTE.secondaryGrey70, fontSize: 11 }} axisLine={{ stroke: PALETTE.secondaryGrey30 }} tickLine={false} />
+              <YAxis tick={{ fill: PALETTE.secondaryGrey70, fontSize: 11 }} axisLine={false} tickLine={false} />
+              <ReferenceLine y={0} stroke={PALETTE.errorRed} strokeDasharray="2 3" />
+              <Tooltip content={<CustomTooltip />} />
 
-            {/* Actual, bank-confirmed cash flow */}
-            <Area type="monotone" dataKey="actual" stroke="#E8C468" strokeWidth={2} fill="url(#actualFill)" connectNulls name="Actual" />
+              {/* Actual, bank-confirmed cash flow */}
+              <Area type="monotone" dataKey="actual" stroke={PALETTE.primary} strokeWidth={2} fill="url(#actualFill)" connectNulls name="Actual" />
 
-            {/* Confidence band: invisible base + visible fill on top of it */}
-            <Area type="monotone" dataKey="bandBase" stackId="band" stroke="none" fill="transparent" isAnimationActive={false} />
-            <Area type="monotone" dataKey="bandHeight" stackId="band" stroke="none" fill="#3FA796" fillOpacity={0.18} isAnimationActive={false} />
+              {/* Confidence band: invisible base + visible fill on top of it */}
+              <Area type="monotone" dataKey="bandBase" stackId="band" stroke="none" fill="transparent" isAnimationActive={false} />
+              <Area type="monotone" dataKey="bandHeight" stackId="band" stroke="none" fill={PALETTE.tertiary100} fillOpacity={0.15} isAnimationActive={false} />
 
-            {/* Base-case forecast line */}
-            <Line type="monotone" dataKey="base" stroke="#3FA796" strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3 }} connectNulls name="Base forecast" />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </div>
+              {/* Base-case forecast line */}
+              <Line type="monotone" dataKey="base" stroke={PALETTE.tertiary100} strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3 }} connectNulls name="Base forecast" />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </DsBox>
 
-      {dip && (
-        <div className="flex items-center gap-2 mt-2 rounded-lg px-3 py-2 bg-cp-red/10 border border-cp-red/35">
-          <AlertTriangle size={13} className="text-cp-red shrink-0" />
-          <span className="text-[11.5px] text-paper">
-            Base-case forecast dips negative in <strong>{dip.m}</strong> — see range band for best/worst case.
-          </span>
-        </div>
-      )}
+        {dip && (
+          <DsStack direction="row" spacing={1} alignItems="center" sx={{ mt: 1.5, px: 1.5, py: 1, borderRadius: 1.5, bgcolor: PALETTE.errorRedNeutralLight, border: "1px solid", borderColor: "error.main" }}>
+            <AlertTriangle size={13} color={PALETTE.errorRed} style={{ flexShrink: 0 }} />
+            <DsTypography variant="supportRegularInfo">
+              Base-case forecast dips negative in <strong>{dip.m}</strong> — see range band for best/worst case.
+            </DsTypography>
+          </DsStack>
+        )}
 
-      <div className="flex items-start gap-2 mt-2 rounded-lg px-3 py-2 bg-navy-panel-2 border border-hairline">
-        <Info size={13} className="text-ink-muted shrink-0 mt-0.5" />
-        <span className="text-[11px] text-ink-muted leading-relaxed">
-          Model: receipts typically land <strong className="text-paper">{model.lagMonths} month{model.lagMonths === 1 ? "" : "s"}</strong> after
-          invoicing, at a <strong className="text-paper">{model.collectionRatePct}%</strong> collection rate — calibrated from this
-          business's own bank history. {model.stressAssumption}
-        </span>
-      </div>
-    </div>
+        <DsStack direction="row" spacing={1} sx={{ mt: 1.5, px: 1.5, py: 1, borderRadius: 1.5, bgcolor: PALETTE.secondaryGrey10 }}>
+          <Info size={13} color={PALETTE.secondaryGrey70} style={{ flexShrink: 0, marginTop: 2 }} />
+          <DsTypography variant="supportRegularMetadata" color="text.secondary">
+            Model: receipts typically land <strong>{model.lagMonths} month{model.lagMonths === 1 ? "" : "s"}</strong> after
+            invoicing, at a <strong>{model.collectionRatePct}%</strong> collection rate — calibrated from this
+            business's own bank history. {model.stressAssumption}
+          </DsTypography>
+        </DsStack>
+      </DsCardContent>
+    </DsCard>
   );
 }
