@@ -1,0 +1,14 @@
+{
+  "source": "Bank Statement Analyser (Account Aggregator feed)",
+  "accountNumberMasked": "XXXXXXXX4821",
+  "fetchedAt": "2026-08-18T06:00:00+05:30",
+  "note": "GST filings run through Feb 2026 (sales already invoiced), but the bank feed has only reconciled actual cash receipts/payments through August 2026. Money for goods already sold in later months hasn't been confirmed as received yet — that's exactly the gap this app needs to forecast.",
+  "monthly": [
+    { "period": "2025-03", "label": "Mar", "customerReceiptsLakhs": 7.5, "otherInflowsLakhs": 0.3, "totalOutflowsLakhs": 5.7 },
+    { "period": "2025-04", "label": "Apr", "customerReceiptsLakhs": 7.6, "otherInflowsLakhs": 0.3, "totalOutflowsLakhs": 5.3 },
+    { "period": "2025-05", "label": "May", "customerReceiptsLakhs": 7.9, "otherInflowsLakhs": 0.2, "totalOutflowsLakhs": 6.7 },
+    { "period": "2025-06", "label": "Jun", "customerReceiptsLakhs": 8.6, "otherInflowsLakhs": 0.3, "totalOutflowsLakhs": 7.0 },
+    { "period": "2025-07", "label": "Jul", "customerReceiptsLakhs": 6.5, "otherInflowsLakhs": 0.2, "totalOutflowsLakhs": 3.7 },
+    { "period": "2025-08", "label": "Aug", "customerReceiptsLakhs": 9.0, "otherInflowsLakhs": 0.3, "totalOutflowsLakhs": 6.6 }
+  ]
+}

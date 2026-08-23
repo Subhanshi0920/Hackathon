@@ -1,0 +1,13 @@
+{
+  "source": "GSTN via GSP",
+  "gstin": "29AACCA1234F1Z5",
+  "fetchedAt": "2026-08-18T09:00:00+05:30",
+  "coveragePeriod": { "from": "2025-03", "to": "2026-02" },
+  "topBuyers": [
+    { "buyerGstin": "07AAECS4321G1Z8", "buyerName": "Shree Retail Chain Pvt Ltd", "valueLakhs": 28.5, "invoiceCount": 42 },
+    { "buyerGstin": "27AABCU9876H1ZP", "buyerName": "Urban Weaves Distributors",   "valueLakhs": 18.2, "invoiceCount": 31 },
+    { "buyerGstin": "29AACFM5678K1Z3", "buyerName": "Mysuru Garment Traders",     "valueLakhs": 12.6, "invoiceCount": 27 },
+    { "buyerGstin": "24AADCP2345L1Z6", "buyerName": "Ahmedabad Fabric House",     "valueLakhs": 9.8,  "invoiceCount": 19 },
+    { "buyerGstin": "33AAECV6789M1Z1", "buyerName": "Chennai Textile Mart",       "valueLakhs": 7.4,  "invoiceCount": 15 }
+  ]
+}
