@@ -1,0 +1,23 @@
+{
+  "source": "GSTN via GSP",
+  "gstin": "29AACCA1234F1Z5",
+  "fetchedAt": "2026-08-18T09:00:00+05:30",
+  "returns": [
+    { "period": "2025-03", "label": "Mar", "dueDate": "2025-04-20", "filingDate": "2025-04-18", "taxableTurnoverLakhs": 8.2,  "taxLiabilityLakhs": 1.48, "taxPaidLakhs": 0.37 },
+    { "period": "2025-04", "label": "Apr", "dueDate": "2025-05-20", "filingDate": "2025-05-19", "taxableTurnoverLakhs": 8.9,  "taxLiabilityLakhs": 1.60, "taxPaidLakhs": 0.40 },
+    { "period": "2025-05", "label": "May", "dueDate": "2025-06-20", "filingDate": "2025-06-15", "taxableTurnoverLakhs": 9.4,  "taxLiabilityLakhs": 1.69, "taxPaidLakhs": 0.42 },
+    { "period": "2025-06", "label": "Jun", "dueDate": "2025-07-20", "filingDate": "2025-07-24", "taxableTurnoverLakhs": 7.1,  "taxLiabilityLakhs": 1.28, "taxPaidLakhs": 0.32 },
+    { "period": "2025-07", "label": "Jul", "dueDate": "2025-08-20", "filingDate": "2025-08-17", "taxableTurnoverLakhs": 9.8,  "taxLiabilityLakhs": 1.76, "taxPaidLakhs": 0.44 },
+    { "period": "2025-08", "label": "Aug", "dueDate": "2025-09-20", "filingDate": "2025-09-20", "taxableTurnoverLakhs": 10.4, "taxLiabilityLakhs": 1.87, "taxPaidLakhs": 0.47 },
+    { "period": "2025-09", "label": "Sep", "dueDate": "2025-10-20", "filingDate": "2025-10-18", "taxableTurnoverLakhs": 11.1, "taxLiabilityLakhs": 2.00, "taxPaidLakhs": 0.50 },
+    { "period": "2025-10", "label": "Oct", "dueDate": "2025-11-20", "filingDate": "2025-11-19", "taxableTurnoverLakhs": 10.8, "taxLiabilityLakhs": 1.94, "taxPaidLakhs": 0.49 },
+    { "period": "2025-11", "label": "Nov", "dueDate": "2025-12-20", "filingDate": null,          "taxableTurnoverLakhs": 6.9,  "taxLiabilityLakhs": 1.24, "taxPaidLakhs": 0.31 },
+    { "period": "2025-12", "label": "Dec", "dueDate": "2026-01-20", "filingDate": "2026-01-15", "taxableTurnoverLakhs": 12.0, "taxLiabilityLakhs": 2.16, "taxPaidLakhs": 0.54 },
+    { "period": "2026-01", "label": "Jan", "dueDate": "2026-02-20", "filingDate": "2026-02-17", "taxableTurnoverLakhs": 12.6, "taxLiabilityLakhs": 2.27, "taxPaidLakhs": 0.57 },
+    { "period": "2026-02", "label": "Feb", "dueDate": "2026-03-20", "filingDate": "2026-03-16", "taxableTurnoverLakhs": 13.1, "taxLiabilityLakhs": 2.36, "taxPaidLakhs": 0.59 }
+  ],
+  "previousFinancialYear": {
+    "label": "FY 2024-25",
+    "totalTurnoverLakhs": 101.9
+  }
+}
