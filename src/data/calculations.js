@@ -258,6 +258,55 @@ export function describeCashFlowModel() {
 export const CASHFLOW = computeCashFlowForecast();
 
 // ---------------------------------------------------------------------------
+// Working capital recommendation — the actual lending decision, derived
+// from the turnover, cash-flow, and concentration calculations above,
+// instead of a hand-picked amount and hand-written justification.
+// ---------------------------------------------------------------------------
+export function computeWorkingCapitalRecommendation() {
+  const avgTurnover = computeAverageMonthlyTurnoverLakhs();
+  const concentration = computeBuyerConcentration();
+
+  // Sizing: a common, simple rule of thumb — offer a facility sized to a
+  // fraction of average monthly turnover, so the business can bridge a
+  // typical month's gap without over-extending the bank's exposure.
+  const sizingMultiple = 0.8;
+  const amountLakhs = +(avgTurnover * sizingMultiple).toFixed(1);
+
+  // Tenure: heavy reliance on one buyer is a real risk signal (computed
+  // above from actual GSTR-1 data) — shorten the review cycle instead of
+  // defaulting to a flat 12 months regardless of risk.
+  const highConcentrationRisk = concentration.topBuyerPct >= 30;
+  const tenureMonths = highConcentrationRisk ? 6 : 12;
+
+  // Pull the actual projected shortfall month from the cash-flow model,
+  // rather than hand-typing whichever month happened to be the dip when
+  // this was last edited.
+  const shortfallMonth = CASHFLOW.find((c) => c.base !== null && c.base < 0);
+
+  const bullets = [
+    shortfallMonth
+      ? `Covers projected ${shortfallMonth.m} shortfall with buffer`
+      : "Provides buffer for the normal working-capital cycle",
+    `Sized to ${sizingMultiple}× average monthly turnover (₹${avgTurnover}L)`,
+    "Interest-only draws against filed GST invoices",
+  ];
+
+  if (highConcentrationRisk) {
+    bullets.push(
+      `Shorter ${tenureMonths}-month review cycle — ${concentration.topBuyerName} accounts for ${concentration.topBuyerPct}% of revenue`
+    );
+  }
+
+  return {
+    amountLakhs,
+    facilityType: "Overdraft facility",
+    tenureMonths,
+    bullets,
+  };
+}
+
+
+// ---------------------------------------------------------------------------
 // Health score — a deterministic fallback shown before "Generate AI insight"
 // is clicked (or if the live API call fails). The AI call produces the
 // "real" score from the same metrics; this is a rules-based approximation
