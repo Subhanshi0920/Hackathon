@@ -1,3 +1,6 @@
+/**
+ * Dashboard page to show GST filing, health score, cash flow, turnover, working capital and connectors cards
+ */
 import { DsBox, DsGrid, DsTypography, PALETTE } from "@am92/react-design-system";
 import Header from "../components/Header.jsx";
 import FilingPulse from "../components/FilingPulse.jsx";
