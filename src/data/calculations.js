@@ -65,6 +65,70 @@ export function computeCompliancePct() {
   return Math.round((onTime / gstr3b.returns.length) * 100);
 }
 
+const PAID_EPSILON = 0.005; // lakh-rupee rounding tolerance
+
+/** Net GST payable for a period: output tax less input tax credit claimed. */
+function netTaxLiabilityOf(record) {
+  return +(record.outputTaxLakhs - record.inputTaxCreditLakhs).toFixed(2);
+}
+
+
+/** What's still owed against the net liability, floored at 0. */
+function outstandingTaxOf(record) {
+  const net = netTaxLiabilityOf(record);
+  const paid = record.taxPaidLakhs || 0;
+  return +Math.max(0, net - paid).toFixed(2);
+}
+
+
+function paymentStatusOf(record) {
+  const net = netTaxLiabilityOf(record);
+  const paid = record.taxPaidLakhs || 0;
+
+  if (paid <= PAID_EPSILON) return "Overdue";
+  if (paid < net - PAID_EPSILON) return "Partially Paid";
+
+  // Fully paid (or paid >= net, e.g. rounding) — was it on time?
+  if (!record.paidDate) return "Overdue"; // fully allocated but no settlement date on record
+  const due = new Date(record.dueDate).getTime();
+  const paidOn = new Date(record.paidDate).getTime();
+  return paidOn <= due ? "Paid" : "Paid Late";
+}
+
+
+function paymentDaysLate(record) {
+  if (!record.paidDate) return null;
+  const diff = (new Date(record.paidDate) - new Date(record.dueDate)) / MS_PER_DAY;
+  return Math.max(0, Math.round(diff));
+}
+
+/** One entry per period: "Paid" | "Paid Late" | "Partially Paid" | "Overdue" */
+export const PAYMENT_STATUS = gstr3b.returns.map(paymentStatusOf);
+
+/** Per-month payment detail — status, amounts, outstanding balance, dates. */
+export const PAYMENT_DETAIL = gstr3b.returns.map((r) => ({
+  period: r.period,
+  label: r.label,
+  status: paymentStatusOf(r),
+  netTaxLiabilityLakhs: netTaxLiabilityOf(r),
+  taxPaidLakhs: r.taxPaidLakhs,
+  outstandingTaxLakhs: outstandingTaxOf(r),
+  daysLate: paymentDaysLate(r),
+  dueDate: r.dueDate,
+  paidDate: r.paidDate,
+}));
+
+/** % of periods that were fully paid on/before the due date ("Paid"). */
+export function computePaymentCompliancePct() {
+  const onTime = gstr3b.returns.filter((r) => paymentStatusOf(r) === "Paid").length;
+  return Math.round((onTime / gstr3b.returns.length) * 100);
+}
+
+/** Total outstanding GST across all periods on record, in lakhs. */
+export function computeTotalOutstandingTaxLakhs() {
+  return +gstr3b.returns.reduce((sum, r) => sum + outstandingTaxOf(r), 0).toFixed(2);
+}
+
 // ---------------------------------------------------------------------------
 // Turnover — derived from gstr3bReturns.json
 // ---------------------------------------------------------------------------
