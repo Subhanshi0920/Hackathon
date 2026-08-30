@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { ShieldCheck, Sparkles } from "lucide-react";
-import { DsCard, DsCardContent, DsBox, DsStack, DsTypography, DsButton, PALETTE } from "@am92/react-design-system";
+import {
+  DsCard,
+  DsCardContent,
+  DsBox,
+  DsStack,
+  DsTypography,
+  DsButton,
+  PALETTE,
+} from "@am92/react-design-system";
 import { ScoreGauge } from "./Small.jsx";
 import {
   TURNOVER,
@@ -69,7 +77,9 @@ export default function HealthScoreCard() {
       setInsight(parsed);
       setGenerated(true);
     } catch (e) {
-      setError("Couldn't reach the AI service — showing a sample insight instead.");
+      setError(
+        "Couldn't reach the AI service — showing a sample insight instead.",
+      );
       setInsight(FALLBACK_INSIGHT);
       setGenerated(true);
     } finally {
@@ -78,29 +88,57 @@ export default function HealthScoreCard() {
   }
 
   return (
-    <DsCard variant="outlined" sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    <DsCard
+      variant="outlined"
+      sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+    >
       <DsCardContent sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
-        <DsStack direction="row" spacing={1} alignItems="center" sx={{ mb: 2.5 }}>
+        <DsStack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{ mb: 2.5 }}
+        >
           <ShieldCheck size={16} color={PALETTE.primary} />
-          <DsTypography variant="headingBoldExtraSmall">AI Business Health Score</DsTypography>
+          <DsTypography variant="headingBoldExtraSmall">
+            AI Business Health Score
+          </DsTypography>
         </DsStack>
 
-        <DsStack direction="row" spacing={2} alignItems="center" sx={{ mb: 2.5 }}>
+        <DsStack
+          direction="row"
+          spacing={2}
+          alignItems="center"
+          sx={{ mb: 2.5 }}
+        >
           <ScoreGauge score={insight.score} />
           <DsBox>
-            <DsTypography variant="displayBoldSmall">{insight.score}</DsTypography>
-            <DsTypography variant="bodyBoldSmall" sx={{ color: PALETTE.successGreen }}>
+            <DsTypography variant="displayBoldSmall">
+              {insight.score}
+            </DsTypography>
+            <DsTypography
+              variant="bodyBoldSmall"
+              sx={{ color: PALETTE.successGreen }}
+            >
               {insight.band}
             </DsTypography>
           </DsBox>
         </DsStack>
 
-        <DsTypography variant="bodyRegularSmall" color="text.secondary" sx={{ flex: 1 }}>
+        <DsTypography
+          variant="bodyRegularSmall"
+          color="text.secondary"
+          sx={{ flex: 1, maxHeight: "fit-content" }}
+        >
           {insight.narrative}
         </DsTypography>
 
         {error && (
-          <DsTypography variant="supportRegularMetadata" color="error.main" sx={{ mt: 1 }}>
+          <DsTypography
+            variant="supportRegularMetadata"
+            color="error.main"
+            sx={{ mt: 1 }}
+          >
             {error}
           </DsTypography>
         )}
@@ -111,9 +149,13 @@ export default function HealthScoreCard() {
           variant="contained"
           color="primary"
           startIcon={<Sparkles size={14} />}
-          sx={{ mt: 2.5 }}
+          sx={{ mt: 2.5, width: "fit-content" }}
         >
-          {loading ? "Analyzing filings…" : generated ? "Regenerate insight" : "Generate AI insight"}
+          {loading
+            ? "Analyzing filings…"
+            : generated
+              ? "Regenerate insight"
+              : "Generate AI insight"}
         </DsButton>
       </DsCardContent>
     </DsCard>

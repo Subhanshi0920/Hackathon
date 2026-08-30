@@ -1,8 +1,0 @@
-{
-  "connections": [
-    { "name": "GSTN", "desc": "GSTR-1 / GSTR-3B", "connected": true, "connectedOn": "2026-06-02", "lastSyncedAt": "2026-08-18T09:00:00+05:30" },
-    { "name": "Tally", "desc": "Books of accounts", "connected": true, "connectedOn": "2026-06-02", "lastSyncedAt": "2026-08-17T22:14:00+05:30" },
-    { "name": "Zoho Books", "desc": "Invoicing & ledger", "connected": false, "connectedOn": null, "lastSyncedAt": null },
-    { "name": "Bank Statements", "desc": "12-month AA feed", "connected": true, "connectedOn": "2026-06-03", "lastSyncedAt": "2026-08-18T06:00:00+05:30" }
-  ]
-}
