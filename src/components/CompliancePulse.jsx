@@ -77,69 +77,129 @@ export default function CompliancePulse() {
             </DsTypography>
           </DsBox>
         </DsStack>
-        <DsStack direction="row" alignItems="flex-end" spacing={1.5} sx={{ height: 64 }}>
-          {MONTHS.map((m, i) => {
-            const filingStatus = FILING_STATUS[i];
-            const paymentStatus = PAYMENT_STATUS[i];
-            return (
-              <DsBox
-                key={i}
-                sx={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 1.5,
-                }}
-              >
-                <DsStack direction="column" spacing={1} sx={{ width: "100%" }}>
-                  <DsBox
-                    sx={{ height: 22, borderRadius: 0.5, bgcolor: FILING_COLOR[filingStatus], opacity: 0.9 }}
-                    title={`Filing: ${filingStatus}`}
-                  />
-                  <DsBox
-                    sx={{ height: 22, borderRadius: 0.5, bgcolor: PAYMENT_COLOR[paymentStatus], opacity: 0.9 }}
-                    title={`Payment: ${paymentStatus}`}
-                  />
-                </DsStack>
-                <DsTypography variant="supportRegularMetadata" color="text.secondary">
-                  {m}
-                </DsTypography>
-              </DsBox>
-            );
-          })}
-        </DsStack>
-
-        <DsStack direction="row" alignItems="flex-start" spacing={6} sx={{ mt: 3, flexWrap: "wrap" }}>
-          <DsBox>
-            <DsTypography variant="supportRegularMetadata" color="text.secondary">
+        <DsStack direction="row" alignItems="flex-end" spacing={1.5}>
+          <DsStack
+            direction="column"
+            spacing={1}
+            sx={{ height: 64, justifyContent: "flex-start", flexShrink: 0 }}
+          >
+            <DsTypography
+              variant="supportRegularMetadata"
+              color="text.secondary"
+              sx={{ height: 22, display: "flex", alignItems: "center" }}
+            >
               Filing
             </DsTypography>
-          <DsStack direction="row" spacing={3} sx={{ mt: 3 }}>
-            <Legend color="#3FA796" label="On time" />
-            <Legend color="#C9962C" label="Late" />
-            <Legend color="#E0554F" label="Missed" />
-          </DsStack>
-          </DsBox>
-          <DsBox>
-            <DsTypography variant="supportRegularMetadata" color="text.secondary">
+            <DsTypography
+              variant="supportRegularMetadata"
+              color="text.secondary"
+              sx={{ height: 22, display: "flex", alignItems: "center" }}
+            >
               Payment
             </DsTypography>
-          <DsStack direction="row" spacing={3} sx={{ mt: 3 }}>
-            <Legend color="#3FA796" label="Paid" />
-            <Legend color="#C9962C" label="Paid late" />
-            <Legend color="#D97B29" label="Partially paid" />
-            <Legend color="#E0554F" label="Overdue" />
           </DsStack>
+
+          <DsStack
+            direction="row"
+            alignItems="flex-end"
+            spacing={1.5}
+            sx={{ flex: 1, height: 64 }}
+          >
+            {MONTHS.map((m, i) => {
+              const filingStatus = FILING_STATUS[i];
+              const paymentStatus = PAYMENT_STATUS[i];
+              return (
+                <DsBox
+                  key={i}
+                  sx={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 1.5,
+                  }}
+                >
+                  <DsStack
+                    direction="column"
+                    spacing={1}
+                    sx={{ width: "100%" }}
+                  >
+                    <DsBox
+                      sx={{
+                        height: 22,
+                        borderRadius: 0.5,
+                        bgcolor: FILING_COLOR[filingStatus],
+                        opacity: 0.9,
+                      }}
+                      title={`Filing: ${filingStatus}`}
+                    />
+                    <DsBox
+                      sx={{
+                        height: 22,
+                        borderRadius: 0.5,
+                        bgcolor: PAYMENT_COLOR[paymentStatus],
+                        opacity: 0.9,
+                      }}
+                      title={`Payment: ${paymentStatus}`}
+                    />
+                  </DsStack>
+                  <DsTypography
+                    variant="supportRegularMetadata"
+                    color="text.secondary"
+                  >
+                    {m}
+                  </DsTypography>
+                </DsBox>
+              );
+            })}
+          </DsStack>
+        </DsStack>
+
+        <DsStack
+          direction="row"
+          alignItems="flex-start"
+          spacing={6}
+          sx={{ mt: 3, flexWrap: "wrap" }}
+        >
+          <DsBox>
+            <DsTypography
+              variant="supportRegularMetadata"
+              color="text.secondary"
+            >
+              Filing
+            </DsTypography>
+            <DsStack direction="row" spacing={3} sx={{ mt: 3 }}>
+              <Legend color="#3FA796" label="On time" />
+              <Legend color="#C9962C" label="Late" />
+              <Legend color="#E0554F" label="Missed" />
+            </DsStack>
+          </DsBox>
+          <DsBox>
+            <DsTypography
+              variant="supportRegularMetadata"
+              color="text.secondary"
+            >
+              Payment
+            </DsTypography>
+            <DsStack direction="row" spacing={3} sx={{ mt: 3 }}>
+              <Legend color="#3FA796" label="Paid" />
+              <Legend color="#C9962C" label="Paid late" />
+              <Legend color="#D97B29" label="Partially paid" />
+              <Legend color="#E0554F" label="Overdue" />
+            </DsStack>
           </DsBox>
         </DsStack>
 
-      {outstandingLakhs > 0 && (
-        <DsTypography variant="supportRegularMetadata" color="text.secondary" sx={{ mt: 3 }}>
-          ₹{outstandingLakhs.toFixed(2)}L in GST is currently outstanding
-          against filed liability.
-        </DsTypography>
-      )}
+        {outstandingLakhs > 0 && (
+          <DsTypography
+            variant="supportRegularMetadata"
+            color="text.secondary"
+            sx={{ mt: 3 }}
+          >
+            ₹{outstandingLakhs.toFixed(2)}L in GST is currently outstanding
+            against filed liability.
+          </DsTypography>
+        )}
       </DsCardContent>
     </DsCard>
   );

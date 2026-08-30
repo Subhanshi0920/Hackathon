@@ -1,46 +1,139 @@
 /**
- * Dashboard page to show GST filing, health score, cash flow, turnover, working capital and connectors cards
+ * Dashboard page to show GST filing, health score, cash flow, turnover andworking capital
  */
-import { DsBox, DsGrid, DsTypography, PALETTE } from "@am92/react-design-system";
+import { useState } from "react";
+import {
+  Activity,
+  BarChart3,
+  BrainCircuit,
+  ChartNoAxesCombined,
+  UserRound,
+  WalletCards,
+} from "lucide-react";
+import {
+  DsBox,
+  DsStack,
+  DsTypography,
+  PALETTE,
+} from "@am92/react-design-system";
 import Header from "../components/Header.jsx";
-import FilingPulse from "../components/FilingPulse.jsx";
 import CompliancePulse from "../components/CompliancePulse.jsx";
 import HealthScoreCard from "../components/HealthScoreCard.jsx";
 import CashFlowCard from "../components/CashFlowCard.jsx";
-import { TurnoverCard, WorkingCapitalCard, ConnectorsCard } from "../components/SecondaryCards.jsx";
+import {
+  TurnoverCard,
+  WorkingCapitalCard,
+} from "../components/SecondaryCards.jsx";
+import { BORROWERS } from "../data/calculations.js";
+
+const tabs = [
+  { id: "business", label: "Business", icon: UserRound },
+  { id: "overview", label: "Overview", icon: Activity },
+  { id: "health", label: "Health score", icon: BrainCircuit },
+  { id: "cashflow", label: "Cash flow", icon: ChartNoAxesCombined },
+  { id: "turnover", label: "GST turnover", icon: BarChart3 },
+  { id: "facility", label: "Credit offer", icon: WalletCards },
+];
 
 export default function Dashboard() {
+  const [activeTab, setActiveTab] = useState("overview");
+  const [selectedBusinessGstin, setSelectedBusinessGstin] = useState(
+    BORROWERS[0].gstin,
+  );
+  const selectedBusiness = BORROWERS.find(
+    (business) => business.gstin === selectedBusinessGstin,
+  );
+
+  function renderContent() {
+    switch (activeTab) {
+      case "business":
+        return <DsBox />;
+      case "health":
+        return <HealthScoreCard />;
+      case "cashflow":
+        return <CashFlowCard />;
+      case "turnover":
+        return <TurnoverCard />;
+      case "facility":
+        return <WorkingCapitalCard />;
+      default:
+        return <CompliancePulse />;
+    }
+  }
+
   return (
     <DsBox sx={{ minHeight: "100vh", bgcolor: PALETTE.secondaryGrey10 }}>
-      <DsBox sx={{ maxWidth: 1180, mx: "auto", px: { xs: 3, md: 5 }, py: { xs: 3, md: 4 } }}>
-        <Header />
+      <DsBox
+        sx={{
+          maxWidth: "100vw",
+          mx: "auto",
+          pt: { xs: 3, md: 2 },
+        }}
+      >
+        <Header
+          business={selectedBusiness}
+          businesses={BORROWERS}
+          onBusinessChange={setSelectedBusinessGstin}
+        />
 
-        <CompliancePulse />
+        <DsStack direction={{ xs: "column", md: "row" }} spacing={2.5}>
+          <DsBox
+            component="nav"
+            aria-label="Dashboard sections"
+            sx={{
+              width: { md: 250 },
+              height: "86vh",
+              flexShrink: 0,
+              overflowX: { xs: "auto", md: "visible" },
+              borderRight: { md: "1px solid" },
+              borderColor: { md: "divider" },
+            }}
+          >
+            <DsStack direction={{ xs: "column" }} spacing={1.5}>
+              <DsStack direction={{ xs: "row", md: "column" }} spacing={2}>
+                {tabs.map((tab) => {
+                  const selected = activeTab === tab.id;
+                  const Icon = tab.icon;
+                  return (
+                    <DsBox
+                      key={tab.id}
+                      sx={{
+                        justifyContent: "flex-start",
+                        whiteSpace: "nowrap",
+                        minWidth: { xs: "max-content", md: "100%" },
+                        cursor: "pointer",
+                        bgcolor: selected
+                          ? "var(--ds-colour-actionPrimary)"
+                          : "inherit",
+                        color: selected
+                          ? "primary.contrastText"
+                          : "text.primary",
+                        px: 8,
+                        py: 1,
+                        borderRadius: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                        height: 40,
+                      }}
+                      onClick={() => setActiveTab(tab.id)}
+                    >
+                      <Icon size={18} />
+                      {tab.label}
+                    </DsBox>
+                  );
+                })}
+              </DsStack>
+            </DsStack>
+          </DsBox>
 
-        <DsGrid container spacing={2.5} sx={{ mb: 2.5 }}>
-          <DsGrid size={{ xs: 12, md: 4 }}>
-            <HealthScoreCard />
-          </DsGrid>
-          <DsGrid size={{ xs: 12, md: 8 }}>
-            <CashFlowCard />
-          </DsGrid>
-        </DsGrid>
-
-        <DsGrid container spacing={2.5}>
-          <DsGrid size={{ xs: 12, md: 4 }}>
-            <TurnoverCard />
-          </DsGrid>
-          <DsGrid size={{ xs: 12, md: 4 }}>
-            <WorkingCapitalCard />
-          </DsGrid>
-          <DsGrid size={{ xs: 12, md: 4 }}>
-            <ConnectorsCard />
-          </DsGrid>
-        </DsGrid>
-
-        <DsTypography variant="supportRegularMetadata" color="text.secondary" sx={{ textAlign: "center", mt: 4 }}>
-          Demo data — for hackathon presentation purposes only.
-        </DsTypography>
+          <DsBox sx={{ flex: 1, minWidth: 0 }}>
+            <DsTypography variant="headingBoldSmall" sx={{ mb: 2 }}>
+              {tabs.find((tab) => tab.id === activeTab)?.label}
+            </DsTypography>
+            {renderContent()}
+          </DsBox>
+        </DsStack>
       </DsBox>
     </DsBox>
   );

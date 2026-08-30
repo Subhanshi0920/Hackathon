@@ -12,7 +12,6 @@
 import businessProfile from "./documents/businessProfile.json";
 import gstr3b from "./documents/gstr3bReturns.json";
 import gstr1 from "./documents/gstr1Buyers.json";
-import connectorStatus from "./documents/connectors.json";
 import bankTransactions from "./documents/bankTransactions.json";
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
@@ -21,12 +20,12 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
 // Business identity — passed through, not calculated, but exposed here so
 // components have one place to import "everything about this application."
 // ---------------------------------------------------------------------------
-export const BORROWER = {
-  name: businessProfile.legalName,
-  gstin: businessProfile.gstin,
-};
 
-export const BUSINESS_PROFILE = businessProfile;
+export const BORROWERS = businessProfile.map((item) => ({
+  name: item.legalName,
+  gstin: item.gstin,
+}));
+
 
 // ---------------------------------------------------------------------------
 // GST filing compliance — derived from gstr3bReturns.json
@@ -168,16 +167,6 @@ export function computeBuyerConcentration() {
 
 export const TOP_BUYERS = gstr1.topBuyers;
 
-// ---------------------------------------------------------------------------
-// Connected sources — passed through from connectors.json, lightly shaped
-// for the UI (the raw doc carries sync timestamps too, kept for later use).
-// ---------------------------------------------------------------------------
-
-export const CONNECTORS = connectorStatus.connections.map((c) => ({
-  name: c.name,
-  desc: c.desc,
-  connected: c.connected,
-}));
 
 // ---------------------------------------------------------------------------
 // Cash-flow forecast

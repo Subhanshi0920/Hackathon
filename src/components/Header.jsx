@@ -1,8 +1,13 @@
 import { Landmark, CheckCircle2 } from "lucide-react";
-import { DsBox, DsStack, DsTypography, DsChip } from "@am92/react-design-system";
-import { BORROWER } from "../data/calculations.js";
+import {
+  DsBox,
+  DsStack,
+  DsTypography,
+  DsChip,
+  DsSelect,
+} from "@am92/react-design-system";
 
-export default function Header() {
+export default function Header({ business, businesses, onBusinessChange }) {
   return (
     <DsStack
       direction="row"
@@ -10,7 +15,13 @@ export default function Header() {
       justifyContent="space-between"
       alignItems="center"
       gap={2}
-      sx={{ pb: 3, mb: 3, borderBottom: "1px solid", borderColor: "divider" }}
+      sx={{
+        pb: 3,
+        mb: 3,
+        borderBottom: "1px solid",
+        borderColor: "divider",
+        px: { xs: 3, md: 5 },
+      }}
     >
       <DsStack direction="row" spacing={1.5} alignItems="center">
         <DsBox
@@ -35,13 +46,25 @@ export default function Header() {
       </DsStack>
 
       <DsStack direction="row" spacing={2} alignItems="center">
-        <DsBox sx={{ textAlign: "right" }}>
-          <DsTypography variant="bodyBoldSmall">{BORROWER.name}</DsTypography>
-          <DsTypography variant="supportRegularMetadata" color="text.secondary">
-            GSTIN {BORROWER.gstin}
+        <DsBox sx={{ minWidth: 200 }}>
+          <DsSelect
+            size="small"
+            value={business.gstin}
+            onChange={(event) => onBusinessChange(event.target.value)}
+            options={businesses.map((b) => ({ label: b.name, value: b.gstin }))}
+            sx={{
+              width: "250px",
+            }}
+          />
+          <DsTypography
+            variant="supportRegularMetadata"
+            color="text.secondary"
+            py={2}
+            px={1}
+          >
+            GSTIN {business.gstin}
           </DsTypography>
         </DsBox>
-        <DsChip icon={<CheckCircle2 size={13} />} label="Live sync" color="success" size="small" />
       </DsStack>
     </DsStack>
   );
