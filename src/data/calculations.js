@@ -401,7 +401,16 @@ export function computeHealthScore() {
       ? `The stressed cash-flow case (largest buyer's payment delayed) turns negative in ${dip.m}.`
       : `The stressed cash-flow case stays positive across the forecast window.`);
 
-  return { score, band, narrative };
+  return {
+    score,
+    band,
+    narrative,
+    recommended_loan_amount_min_lakhs: +(
+      computeWorkingCapitalRecommendation().amountLakhs * 0.7
+    ).toFixed(1),
+    recommended_loan_amount_max_lakhs:
+      computeWorkingCapitalRecommendation().amountLakhs,
+  };
 }
 
 
