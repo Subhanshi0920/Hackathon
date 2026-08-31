@@ -25,6 +25,8 @@ export default function HealthScoreCard() {
     computeYoYGrowthPct,
     computeBuyerConcentration,
     describeCashFlowModel,
+    computeWorkingCapitalRecommendation,
+    computeAverageMonthlyTurnoverLakhs
   } = useAppData();
 
   const [insight, setInsight] = useState(FALLBACK_INSIGHT);
@@ -49,21 +51,25 @@ export default function HealthScoreCard() {
     setLoading(true);
     setError(null);
     try {
-      const concentration = computeBuyerConcentration();
-      const model = describeCashFlowModel();
+       const concentration = computeBuyerConcentration();
+    const model = describeCashFlowModel();
+    const workingCapitalRecommendation = computeWorkingCapitalRecommendation();
       const metrics = {
-        turnover_trend_lakhs: TURNOVER,
-        filing_status_last_12_months: FILING_STATUS,
-        gst_compliance_pct: compliancePct,
-        turnover_yoy_growth_pct: computeYoYGrowthPct(),
-        top_buyer_concentration_pct: concentration.topBuyerPct,
-        top5_buyer_concentration_pct: concentration.top5Pct,
-        cash_flow_model_lag_months: model.lagMonths,
-        cash_flow_model_collection_rate_pct: model.collectionRatePct,
-        base_case_cash_flow_lakhs: CASHFLOW.map((c) => c.base ?? c.actual),
-        stressed_case_cash_flow_lakhs: CASHFLOW.map((c) => c.low ?? c.actual),
-        projected_shortfall_month: dip ? dip.m : null,
-      };
+      turnover_trend_lakhs: TURNOVER,
+      filing_status_last_12_months: FILING_STATUS,
+      gst_compliance_pct: compliancePct,
+      turnover_yoy_growth_pct: computeYoYGrowthPct(),
+      top_buyer_concentration_pct: concentration.topBuyerPct,
+      top5_buyer_concentration_pct: concentration.top5Pct,
+      cash_flow_model_lag_months: model.lagMonths,
+      cash_flow_model_collection_rate_pct: model.collectionRatePct,
+      base_case_cash_flow_lakhs: CASHFLOW.map((c) => c.base ?? c.actual),
+      stressed_case_cash_flow_lakhs: CASHFLOW.map((c) => c.low ?? c.actual),
+      projected_shortfall_month: dip ? dip.m : null,
+      average_monthly_turnover_lakhs: computeAverageMonthlyTurnoverLakhs(),
+      calculated_working_capital_ceiling_lakhs:
+        workingCapitalRecommendation.amountLakhs,
+    };
 
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
