@@ -16,6 +16,7 @@ import {
   DsTypography,
   PALETTE,
 } from "@am92/react-design-system";
+import { AppDataProvider } from "../data/DataContext.jsx";
 import Header from "../components/Header.jsx";
 import CompliancePulse from "../components/CompliancePulse.jsx";
 import HealthScoreCard from "../components/HealthScoreCard.jsx";
@@ -24,7 +25,9 @@ import {
   TurnoverCard,
   WorkingCapitalCard,
 } from "../components/SecondaryCards.jsx";
-import { BORROWERS } from "../data/calculations.js";
+import { BusinessSection } from "../components/BusinessSection.jsx";
+import { InterestCalculatorCard } from "../components/InterestCalculatorCard.jsx";
+import { BORROWERS, getBusinessProfileByGstin } from "../data/calculations.js";
 
 const tabs = [
   { id: "business", label: "Business", icon: UserRound },
@@ -47,7 +50,11 @@ export default function Dashboard() {
   function renderContent() {
     switch (activeTab) {
       case "business":
-        return <DsBox />;
+        return (
+          <BusinessSection
+            profile={getBusinessProfileByGstin(selectedBusinessGstin)}
+          />
+        );
       case "health":
         return <HealthScoreCard />;
       case "cashflow":
@@ -55,36 +62,62 @@ export default function Dashboard() {
       case "turnover":
         return <TurnoverCard />;
       case "facility":
-        return <WorkingCapitalCard />;
+        return (
+          <DsStack spacing={2.5}>
+            <WorkingCapitalCard />
+            <InterestCalculatorCard />
+          </DsStack>
+        );
       default:
         return <CompliancePulse />;
     }
   }
 
   return (
-    <DsBox sx={{ minHeight: "100vh", bgcolor: PALETTE.secondaryGrey10 }}>
+    <AppDataProvider>
       <DsBox
         sx={{
-          maxWidth: "100vw",
-          mx: "auto",
-          pt: { xs: 3, md: 2 },
+          height: { xs: "auto", md: "100vh" },
+          overflow: { xs: "visible", md: "hidden" },
+          bgcolor: PALETTE.secondaryGrey10,
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        <Header
-          business={selectedBusiness}
-          businesses={BORROWERS}
-          onBusinessChange={setSelectedBusinessGstin}
-        />
+        <DsBox
+          sx={{
+            maxWidth: "100vw",
+            width: "100%",
+            mx: "auto",
+            pt: { xs: 3, md: 2 },
+            flexShrink: 0,
+          }}
+        >
+          <Header
+            business={selectedBusiness}
+            businesses={BORROWERS}
+            onBusinessChange={setSelectedBusinessGstin}
+          />
+        </DsBox>
 
-        <DsStack direction={{ xs: "column", md: "row" }} spacing={2.5}>
+        <DsStack
+          direction={{ xs: "column", md: "row" }}
+          spacing={2.5}
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflow: { xs: "visible", md: "hidden" },
+          }}
+        >
           <DsBox
             component="nav"
             aria-label="Dashboard sections"
             sx={{
               width: { md: 250 },
-              height: "86vh",
               flexShrink: 0,
+              height: { xs: "auto", md: "100%" },
               overflowX: { xs: "auto", md: "visible" },
+              overflowY: { md: "auto" },
               borderRight: { md: "1px solid" },
               borderColor: { md: "divider" },
             }}
@@ -127,7 +160,16 @@ export default function Dashboard() {
             </DsStack>
           </DsBox>
 
-          <DsBox sx={{ flex: 1, minWidth: 0 }}>
+          <DsBox
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              height: { xs: "auto", md: "100%" },
+              overflowY: { xs: "visible", md: "auto" },
+              pr: { md: 1 },
+              pb: { md: 3 },
+            }}
+          >
             <DsTypography variant="headingBoldSmall" sx={{ mb: 2 }}>
               {tabs.find((tab) => tab.id === activeTab)?.label}
             </DsTypography>
@@ -135,6 +177,6 @@ export default function Dashboard() {
           </DsBox>
         </DsStack>
       </DsBox>
-    </DsBox>
+    </AppDataProvider>
   );
 }
