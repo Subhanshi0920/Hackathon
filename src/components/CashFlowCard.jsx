@@ -4,16 +4,7 @@ import {
 } from "recharts";
 import { TrendingUp, AlertTriangle, Info } from "lucide-react";
 import { DsCard, DsCardContent, DsBox, DsStack, DsTypography, PALETTE } from "@am92/react-design-system";
-import { CASHFLOW, describeCashFlowModel } from "../data/calculations.js";
-
-// recharts trick for a shaded band: stack a transparent "low" area, then a
-// visible "high - low" area on top of it, so only the gap between the two
-// gets filled.
-const chartData = CASHFLOW.map((c) => ({
-  ...c,
-  bandBase: c.low,
-  bandHeight: c.low != null && c.high != null ? +(c.high - c.low).toFixed(2) : null,
-}));
+import { useAppData } from "../data/DataContext.jsx";
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -37,6 +28,18 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function CashFlowCard() {
+  const { CASHFLOW, describeCashFlowModel } = useAppData();
+
+  // recharts trick for a shaded band: stack a transparent "low" area, then a
+  // visible "high - low" area on top of it, so only the gap between the two
+  // gets filled. Computed per-render, since CASHFLOW changes when the user
+  // submits new GST/bank data.
+  const chartData = CASHFLOW.map((c) => ({
+    ...c,
+    bandBase: c.low,
+    bandHeight: c.low != null && c.high != null ? +(c.high - c.low).toFixed(2) : null,
+  }));
+
   const dip = chartData.find((c) => c.base !== null && c.base < 0);
   const model = describeCashFlowModel();
 

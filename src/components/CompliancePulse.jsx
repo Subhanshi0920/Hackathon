@@ -1,11 +1,4 @@
-import {
-  MONTHS,
-  FILING_STATUS,
-  PAYMENT_STATUS,
-  computeCompliancePct,
-  computePaymentCompliancePct,
-  computeTotalOutstandingTaxLakhs,
-} from "../data/calculations.js";
+import { useAppData } from "../data/DataContext.jsx";
 import {
   DsCard,
   DsCardContent,
@@ -29,6 +22,7 @@ const PAYMENT_COLOR = {
 };
 
 export default function CompliancePulse() {
+  const { MONTHS, FILING_STATUS, PAYMENT_STATUS, computeCompliancePct, computePaymentCompliancePct, computeTotalOutstandingTaxLakhs } = useAppData();
   const filingPct = computeCompliancePct();
   const paymentPct = computePaymentCompliancePct();
   const outstandingLakhs = computeTotalOutstandingTaxLakhs();

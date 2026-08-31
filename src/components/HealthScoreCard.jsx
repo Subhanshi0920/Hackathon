@@ -10,25 +10,37 @@ import {
   PALETTE,
 } from "@am92/react-design-system";
 import { ScoreGauge } from "./Small.jsx";
-import {
-  TURNOVER,
-  FILING_STATUS,
-  CASHFLOW,
-  FALLBACK_INSIGHT,
-  computeCompliancePct,
-  computeYoYGrowthPct,
-  computeBuyerConcentration,
-  describeCashFlowModel,
-} from "../data/calculations.js";
+import { useAppData } from "../data/DataContext.jsx";
 
 // NOTE: This calls the Anthropic API directly from the browser. That's fine
 // for a hackathon demo, but for production you'd proxy this through your
 // own backend so the API key/auth isn't exposed client-side.
 export default function HealthScoreCard() {
+  const {
+    TURNOVER,
+    FILING_STATUS,
+    CASHFLOW,
+    FALLBACK_INSIGHT,
+    computeCompliancePct,
+    computeYoYGrowthPct,
+    computeBuyerConcentration,
+    describeCashFlowModel,
+  } = useAppData();
+
   const [insight, setInsight] = useState(FALLBACK_INSIGHT);
+  // Tracks which FALLBACK_INSIGHT the current `insight` was generated
+  // against. If the user submits a new GST/bank upload, FALLBACK_INSIGHT is
+  // a new object (recomputed from the new data) — when that happens we want
+  // to show the fresh deterministic score, not a stale AI answer computed
+  // from the old data. Comparing during render avoids an extra render pass
+  // just to reset state.
+  const [insightFor, setInsightFor] = useState(FALLBACK_INSIGHT);
   const [loading, setLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [error, setError] = useState(null);
+
+  const isStale = insightFor !== FALLBACK_INSIGHT;
+  const displayedInsight = isStale ? FALLBACK_INSIGHT : insight;
 
   const compliancePct = computeCompliancePct();
   const dip = CASHFLOW.find((c) => c.base !== null && c.base < 0);
@@ -75,12 +87,15 @@ export default function HealthScoreCard() {
       const clean = text.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
       setInsight(parsed);
+      setInsightFor(FALLBACK_INSIGHT);
       setGenerated(true);
-    } catch (e) {
+    } catch (err) {
+      console.error("[HealthScoreCard] AI insight request failed:", err);
       setError(
         "Couldn't reach the AI service — showing a sample insight instead.",
       );
       setInsight(FALLBACK_INSIGHT);
+      setInsightFor(FALLBACK_INSIGHT);
       setGenerated(true);
     } finally {
       setLoading(false);
@@ -111,16 +126,16 @@ export default function HealthScoreCard() {
           alignItems="center"
           sx={{ mb: 2.5 }}
         >
-          <ScoreGauge score={insight.score} />
+          <ScoreGauge score={displayedInsight.score} />
           <DsBox>
             <DsTypography variant="displayBoldSmall">
-              {insight.score}
+              {displayedInsight.score}
             </DsTypography>
             <DsTypography
               variant="bodyBoldSmall"
               sx={{ color: PALETTE.successGreen }}
             >
-              {insight.band}
+              {displayedInsight.band}
             </DsTypography>
           </DsBox>
         </DsStack>
@@ -130,10 +145,10 @@ export default function HealthScoreCard() {
           color="text.secondary"
           sx={{ flex: 1, maxHeight: "fit-content" }}
         >
-          {insight.narrative}
+          {displayedInsight.narrative}
         </DsTypography>
 
-        {error && (
+        {error && !isStale && (
           <DsTypography
             variant="supportRegularMetadata"
             color="error.main"
@@ -153,7 +168,7 @@ export default function HealthScoreCard() {
         >
           {loading
             ? "Analyzing filings…"
-            : generated
+            : generated && !isStale
               ? "Regenerate insight"
               : "Generate AI insight"}
         </DsButton>

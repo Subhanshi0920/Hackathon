@@ -1,5 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
-import { FileText, Wallet, Link2, ArrowUpRight } from "lucide-react";
+import { FileText, Wallet, ArrowUpRight } from "lucide-react";
 import {
   DsCard,
   DsCardContent,
@@ -7,19 +7,13 @@ import {
   DsStack,
   DsTypography,
   DsButton,
-  DsChip,
   PALETTE,
 } from "@am92/react-design-system";
-import {
-  TURNOVER,
-  MONTHS,
-  computeAverageMonthlyTurnoverLakhs,
-  computeYoYGrowthPct,
-  computeWorkingCapitalRecommendation,
-} from "../data/calculations.js";
+import { useAppData } from "../data/DataContext.jsx";
 import { Stat } from "./Small.jsx";
 
 export function TurnoverCard() {
+  const { TURNOVER, MONTHS, computeAverageMonthlyTurnoverLakhs, computeYoYGrowthPct } = useAppData();
   const data = TURNOVER.map((v, i) => ({ m: MONTHS[i], v }));
   const avgTurnover = computeAverageMonthlyTurnoverLakhs();
   const yoyGrowth = computeYoYGrowthPct();
@@ -72,6 +66,7 @@ export function TurnoverCard() {
 }
 
 export function WorkingCapitalCard() {
+  const { computeWorkingCapitalRecommendation } = useAppData();
   const rec = computeWorkingCapitalRecommendation();
 
   return (
