@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ShieldCheck, Sparkles } from "lucide-react";
 import {
   DsCard,
@@ -12,9 +12,28 @@ import {
 import { ScoreGauge } from "./Small.jsx";
 import { useAppData } from "../data/DataContext.jsx";
 
-// NOTE: This calls the Anthropic API directly from the browser. That's fine
-// for a hackathon demo, but for production you'd proxy this through your
-// own backend so the API key/auth isn't exposed client-side.
+// The AI call is routed through the /api/ai/generate dev-server proxy (see
+// vite.config.js) so the OpenRouter key stays server-side.
+const CACHE_PREFIX = "healthInsightCache:";
+
+function readCache(key) {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(key, value) {
+  try {
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(value));
+  } catch {
+    // localStorage can be unavailable (private mode, quota) — caching is a
+    // nice-to-have, not worth failing the insight over.
+  }
+}
+
 export default function HealthScoreCard() {
   const {
     TURNOVER,
@@ -47,14 +66,11 @@ export default function HealthScoreCard() {
   const compliancePct = computeCompliancePct();
   const dip = CASHFLOW.find((c) => c.base !== null && c.base < 0);
 
-  async function generateInsight() {
-    setLoading(true);
-    setError(null);
-    try {
-       const concentration = computeBuyerConcentration();
+  function buildMetrics() {
+    const concentration = computeBuyerConcentration();
     const model = describeCashFlowModel();
     const workingCapitalRecommendation = computeWorkingCapitalRecommendation();
-      const metrics = {
+    return {
       turnover_trend_lakhs: TURNOVER,
       filing_status_last_12_months: FILING_STATUS,
       gst_compliance_pct: compliancePct,
@@ -70,28 +86,58 @@ export default function HealthScoreCard() {
       calculated_working_capital_ceiling_lakhs:
         workingCapitalRecommendation.amountLakhs,
     };
+  }
 
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+  // If the current GST/bank data already has a cached AI insight (from an
+  // earlier click, possibly before a page refresh), show it immediately
+  // instead of forcing a fresh API call.
+  useEffect(() => {
+    const cached = readCache(JSON.stringify(buildMetrics()));
+    if (cached) {
+      setInsight(cached);
+      setInsightFor(FALLBACK_INSIGHT);
+      setGenerated(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [FALLBACK_INSIGHT]);
+
+  async function generateInsight() {
+    if (loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const metrics = buildMetrics();
+      const cacheKey = JSON.stringify(metrics);
+      const cached = readCache(cacheKey);
+      if (cached) {
+        setInsight(cached);
+        setInsightFor(FALLBACK_INSIGHT);
+        setGenerated(true);
+        return;
+      }
+
+      const res = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1000,
-          messages: [
-            {
-              role: "user",
-              content:
-                "You are a credit underwriting assistant for a bank's SME lending desk. Given this SME's GST filing and cash-flow data, return ONLY a JSON object (no markdown, no preamble) with keys: score (integer 0-100, creditworthiness), band (a 2-4 word label like 'Healthy — Fundable'), narrative (2-3 plain-English sentences explaining the score for a loan officer, referencing the specific data). Data: " +
-                JSON.stringify(metrics),
-            },
-          ],
+          prompt:
+            "You are a credit underwriting assistant for a bank's SME lending desk. Given this SME's GST filing and cash-flow data, return ONLY a JSON object (no markdown, no preamble) with keys: score (integer 0-100, creditworthiness), band (a 2-4 word label like 'Healthy — Fundable'), narrative (2-3 plain-English sentences explaining the score for a loan officer, referencing the specific data). Data: " +
+            JSON.stringify(metrics),
         }),
       });
 
+      if (!res.ok) throw new Error(`Status: ${res.status}`);
+
       const data = await res.json();
-      const text = data.content?.find((b) => b.type === "text")?.text ?? "";
-      const clean = text.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(clean);
+      const text = data.choices?.[0]?.message?.content ?? "";
+      const jsonStart = text.indexOf("{");
+      const jsonEnd = text.lastIndexOf("}");
+      if (jsonStart === -1 || jsonEnd <= jsonStart) {
+        throw new Error("The AI response did not contain a JSON object.");
+      }
+      const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1));
+
+      writeCache(cacheKey, parsed);
       setInsight(parsed);
       setInsightFor(FALLBACK_INSIGHT);
       setGenerated(true);
