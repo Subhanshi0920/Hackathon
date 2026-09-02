@@ -12,9 +12,9 @@ import {
 import { ScoreGauge } from "./Small.jsx";
 import { useAppData } from "../data/DataContext.jsx";
 
-// NOTE: This calls the Anthropic API directly from the browser. That's fine
-// for a hackathon demo, but for production you'd proxy this through your
-// own backend so the API key/auth isn't exposed client-side.
+// Insight generation is proxied through the /api/insight serverless function
+// (see api/insight.js) so the OpenRouter key stays server-side and the
+// browser request is same-origin.
 export default function HealthScoreCard() {
   const {
     TURNOVER,
@@ -71,27 +71,14 @@ export default function HealthScoreCard() {
         workingCapitalRecommendation.amountLakhs,
     };
 
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/insight", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1000,
-          messages: [
-            {
-              role: "user",
-              content:
-                "You are a credit underwriting assistant for a bank's SME lending desk. Given this SME's GST filing and cash-flow data, return ONLY a JSON object (no markdown, no preamble) with keys: score (integer 0-100, creditworthiness), band (a 2-4 word label like 'Healthy — Fundable'), narrative (2-3 plain-English sentences explaining the score for a loan officer, referencing the specific data). Data: " +
-                JSON.stringify(metrics),
-            },
-          ],
-        }),
+        body: JSON.stringify({ metrics }),
       });
+      if (!res.ok) throw new Error(`insight request failed: ${res.status}`);
 
-      const data = await res.json();
-      const text = data.content?.find((b) => b.type === "text")?.text ?? "";
-      const clean = text.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(clean);
+      const parsed = await res.json();
       setInsight(parsed);
       setInsightFor(FALLBACK_INSIGHT);
       setGenerated(true);
