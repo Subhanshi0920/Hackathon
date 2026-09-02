@@ -115,14 +115,10 @@ export function WorkingCapitalCard() {
       }
 
       const response = await fetch(
-        `${window.location.origin}/api/v1/chat/completions`,
+        "/api/v1/chat/completions",
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-            // Removed HTTP-Referer/Title headers as they can trigger preflight CORS fails
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             model: "openrouter/free",
             temperature: 0,

@@ -12,8 +12,8 @@ import {
 import { ScoreGauge } from "./Small.jsx";
 import { useAppData } from "../data/DataContext.jsx";
 
-// The AI call is routed through the /api/ai/generate dev-server proxy (see
-// vite.config.js) so the OpenRouter key stays server-side.
+// The AI call goes to /api/v1/chat/completions — a serverless passthrough
+// (see api/v1/chat/completions.js) that injects the OpenRouter key server-side.
 const CACHE_PREFIX = "healthInsightCache:";
 
 function readCache(key) {
@@ -108,56 +108,38 @@ export default function HealthScoreCard() {
     try {
       const metrics = buildMetrics();
       const cacheKey = JSON.stringify(metrics);
-      const cached = readCache(cacheKey);
-      if (cached) {
-        setInsight(cached);
-        setInsightFor(FALLBACK_INSIGHT);
-        setGenerated(true);
-        return;
-      }
 
-      const res = await fetch(
-        `${window.location.origin}/api/v1/chat/completions`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-            // Removed HTTP-Referer/Title headers as they can trigger preflight CORS fails
-          },
-          body: JSON.stringify({
-            model: "openrouter/free",
-            temperature: 0,
-            messages: [
-              {
-                role: "user",
-                content:
-                  "You are a credit underwriting assistant for a bank's SME lending desk. Reply with ONLY one valid JSON object, with no preamble, markdown, or code fence. Use exactly these keys: score, band, narrative, recommended_loan_amount_min_lakhs, recommended_loan_amount_max_lakhs. " +
-                  "Compute score deterministically with this exact rubric, do not guess: start at 50; add (gst_compliance_pct * 0.3); add (clamp(turnover_yoy_growth_pct, -20, 20) * 0.5); subtract (top_buyer_concentration_pct / 100 * 15); subtract 10 if any value in stressed_case_cash_flow_lakhs is negative; clamp the result to 0-100 and round to the nearest integer. " +
-                  "band must be 'Healthy — Fundable' if score >= 75, 'Stable — Monitor' if score >= 55, 'Caution — Review' if score >= 35, else 'High Risk — Decline'. " +
-                  "narrative must be 2-3 plain-English sentences for a loan officer referencing the specific data. " +
-                  "recommended_loan_amount_min_lakhs and recommended_loan_amount_max_lakhs must both be numbers describing a conservative working-capital facility range (not a term-loan valuation), with recommended_loan_amount_max_lakhs never exceeding calculated_working_capital_ceiling_lakhs, and recommended_loan_amount_min_lakhs never greater than recommended_loan_amount_max_lakhs; narrow the range and lower it when risk signals require it. " +
-                  "Data: " +
-                  JSON.stringify(metrics),
-              },
-            ],
-          }),
-        },
-      );
+      const res = await fetch("/api/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "openrouter/free",
+          temperature: 0,
+          messages: [
+            {
+              role: "user",
+              content:
+                "You are a credit underwriting assistant for a bank's SME lending desk. Reply with ONLY one valid JSON object, with no preamble, markdown, or code fence. Use exactly these keys: score, band, narrative, recommended_loan_amount_min_lakhs, recommended_loan_amount_max_lakhs. " +
+                "Compute score deterministically with this exact rubric, do not guess: start at 50; add (gst_compliance_pct * 0.3); add (clamp(turnover_yoy_growth_pct, -20, 20) * 0.5); subtract (top_buyer_concentration_pct / 100 * 15); subtract 10 if any value in stressed_case_cash_flow_lakhs is negative; clamp the result to 0-100 and round to the nearest integer. " +
+                "band must be 'Healthy — Fundable' if score >= 75, 'Stable — Monitor' if score >= 55, 'Caution — Review' if score >= 35, else 'High Risk — Decline'. " +
+                "narrative must be 2-3 plain-English sentences for a loan officer referencing the specific data. " +
+                "recommended_loan_amount_min_lakhs and recommended_loan_amount_max_lakhs must both be numbers describing a conservative working-capital facility range (not a term-loan valuation), with recommended_loan_amount_max_lakhs never exceeding calculated_working_capital_ceiling_lakhs, and recommended_loan_amount_min_lakhs never greater than recommended_loan_amount_max_lakhs; narrow the range and lower it when risk signals require it. " +
+                "Data: " +
+                JSON.stringify(metrics),
+            },
+          ],
+        }),
+      });
       if (!res.ok) throw new Error(`Status: ${res.status}`);
 
       const data = await res.json();
-      console.log("Proxy execution succeeded:", data);
       const resultText = data.choices?.[0]?.message?.content ?? "";
       const jsonStart = resultText.indexOf("{");
       const jsonEnd = resultText.lastIndexOf("}");
       if (jsonStart === -1 || jsonEnd <= jsonStart) {
-        // setInsight(FALLBACK_INSIGHT);
         throw new Error("The AI response did not contain a JSON object.");
       }
-
       const parsed = JSON.parse(resultText.slice(jsonStart, jsonEnd + 1));
-
       writeCache(cacheKey, parsed);
       setInsight(parsed);
       setInsightFor(FALLBACK_INSIGHT);
