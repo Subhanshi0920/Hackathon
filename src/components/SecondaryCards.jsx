@@ -90,19 +90,6 @@ function writeRangeCache(key, value) {
   }
 }
 
-// body: JSON.stringify({
-//           prompt:
-//             "You are a credit underwriting assistant for a bank's SME lending desk. Reply with ONLY one valid JSON object, with no preamble, markdown, or code fence. Use exactly these keys: recommended_loan_amount_min_lakhs, recommended_loan_amount_max_lakhs. " +
-//             "Both must be numbers describing a conservative working-capital facility range (not a term-loan valuation), with recommended_loan_amount_max_lakhs never exceeding calculated_working_capital_ceiling_lakhs, and recommended_loan_amount_min_lakhs never greater than recommended_loan_amount_max_lakhs; narrow and lower the range when risk signals require it. " +
-//             "Data: " +
-//             JSON.stringify({
-//               calculated_working_capital_ceiling_lakhs: rec.amountLakhs,
-//               facility_type: rec.facilityType,
-//               tenure_months: rec.tenureMonths,
-//               supporting_signals: rec.bullets,
-//             }),
-//         }),
-
 export function WorkingCapitalCard() {
   const { computeWorkingCapitalRecommendation } = useAppData();
   const rec = computeWorkingCapitalRecommendation();
