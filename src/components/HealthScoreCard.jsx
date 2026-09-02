@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ShieldCheck, Sparkles } from "lucide-react";
 import {
   DsCard,
@@ -12,6 +12,28 @@ import {
 import { ScoreGauge } from "./Small.jsx";
 import { useAppData } from "../data/DataContext.jsx";
 
+// The AI call is routed through the /api/ai/generate dev-server proxy (see
+// vite.config.js) so the OpenRouter key stays server-side.
+const CACHE_PREFIX = "healthInsightCache:";
+
+function readCache(key) {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(key, value) {
+  try {
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(value));
+  } catch {
+    // localStorage can be unavailable (private mode, quota) — caching is a
+    // nice-to-have, not worth failing the insight over.
+  }
+}
+
 export default function HealthScoreCard() {
   const {
     TURNOVER,
@@ -22,6 +44,8 @@ export default function HealthScoreCard() {
     computeYoYGrowthPct,
     computeBuyerConcentration,
     describeCashFlowModel,
+    computeWorkingCapitalRecommendation,
+    computeAverageMonthlyTurnoverLakhs,
   } = useAppData();
 
   const [insight, setInsight] = useState(FALLBACK_INSIGHT);
@@ -42,13 +66,11 @@ export default function HealthScoreCard() {
   const compliancePct = computeCompliancePct();
   const dip = CASHFLOW.find((c) => c.base !== null && c.base < 0);
 
-  async function generateInsight() {
-    setLoading(true);
-    setError(null);
+  function buildMetrics() {
     const concentration = computeBuyerConcentration();
     const model = describeCashFlowModel();
     const workingCapitalRecommendation = computeWorkingCapitalRecommendation();
-    const metrics = {
+    return {
       turnover_trend_lakhs: TURNOVER,
       filing_status_last_12_months: FILING_STATUS,
       gst_compliance_pct: compliancePct,
@@ -64,9 +86,37 @@ export default function HealthScoreCard() {
       calculated_working_capital_ceiling_lakhs:
         workingCapitalRecommendation.amountLakhs,
     };
+  }
 
+  // If the current GST/bank data already has a cached AI insight (from an
+  // earlier click, possibly before a page refresh), show it immediately
+  // instead of forcing a fresh API call.
+  useEffect(() => {
+    const cached = readCache(JSON.stringify(buildMetrics()));
+    if (cached) {
+      setInsight(cached);
+      setInsightFor(FALLBACK_INSIGHT);
+      setGenerated(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [FALLBACK_INSIGHT]);
+
+  async function generateInsight() {
+    // if (loading) return;
+    setLoading(true);
+    setError(null);
     try {
-      const response = await fetch(
+      const metrics = buildMetrics();
+      const cacheKey = JSON.stringify(metrics);
+      const cached = readCache(cacheKey);
+      if (cached) {
+        setInsight(cached);
+        setInsightFor(FALLBACK_INSIGHT);
+        setGenerated(true);
+        return;
+      }
+
+      const res = await fetch(
         `${window.location.origin}/api/v1/chat/completions`,
         {
           method: "POST",
@@ -94,10 +144,9 @@ export default function HealthScoreCard() {
           }),
         },
       );
+      if (!res.ok) throw new Error(`Status: ${res.status}`);
 
-      if (!response.ok) throw new Error(`Status: ${response.status}`);
-
-      const data = await response.json();
+      const data = await res.json();
       console.log("Proxy execution succeeded:", data);
       const resultText = data.choices?.[0]?.message?.content ?? "";
       const jsonStart = resultText.indexOf("{");
@@ -108,29 +157,15 @@ export default function HealthScoreCard() {
       }
 
       const parsed = JSON.parse(resultText.slice(jsonStart, jsonEnd + 1));
-      if (
-        typeof parsed.score !== "number" ||
-        typeof parsed.band !== "string" ||
-        typeof parsed.narrative !== "string" ||
-        typeof parsed.recommended_loan_amount_min_lakhs !== "number" ||
-        typeof parsed.recommended_loan_amount_max_lakhs !== "number" ||
-        parsed.recommended_loan_amount_min_lakhs < 0 ||
-        parsed.recommended_loan_amount_min_lakhs >
-          parsed.recommended_loan_amount_max_lakhs ||
-        parsed.recommended_loan_amount_max_lakhs >
-          workingCapitalRecommendation.amountLakhs
-      ) {
-        // setInsight(FALLBACK_INSIGHT);
-        throw new Error("The AI response had an invalid loan recommendation.");
-      }
 
+      writeCache(cacheKey, parsed);
       setInsight(parsed);
       setInsightFor(FALLBACK_INSIGHT);
       setGenerated(true);
     } catch (err) {
       console.error("[HealthScoreCard] AI insight request failed:", err);
       setError(
-        "The AI returned an invalid response — showing the sample insight instead.",
+        "Couldn't reach the AI service — showing a sample insight instead.",
       );
       setInsight(FALLBACK_INSIGHT);
       setInsightFor(FALLBACK_INSIGHT);
@@ -157,6 +192,7 @@ export default function HealthScoreCard() {
             AI Business Health Score
           </DsTypography>
         </DsStack>
+
         <DsStack
           direction="row"
           spacing={2}
@@ -176,23 +212,7 @@ export default function HealthScoreCard() {
             </DsTypography>
           </DsBox>
         </DsStack>
-        {generated && (
-          <DsBox sx={{ mb: 2 }}>
-            <DsTypography
-              variant="supportRegularMetadata"
-              color="text.secondary"
-            >
-              Recommended working-capital facility
-            </DsTypography>
-            <DsTypography
-              variant="headingBoldExtraSmall"
-              sx={{ color: PALETTE.primary }}
-            >
-              ₹{insight.recommended_loan_amount_min_lakhs}L – ₹
-              {insight.recommended_loan_amount_max_lakhs}L
-            </DsTypography>
-          </DsBox>
-        )}
+
         <DsTypography
           variant="bodyRegularSmall"
           color="text.secondary"
@@ -210,6 +230,7 @@ export default function HealthScoreCard() {
             {error}
           </DsTypography>
         )}
+
         <DsButton
           onClick={generateInsight}
           loading={loading}

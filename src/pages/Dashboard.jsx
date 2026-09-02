@@ -30,7 +30,6 @@ import { InterestCalculatorCard } from "../components/InterestCalculatorCard.jsx
 import { BORROWERS, getBusinessProfileByGstin } from "../data/calculations.js";
 
 const tabs = [
-  { id: "business", label: "Business", icon: UserRound },
   { id: "overview", label: "Overview", icon: Activity },
   { id: "health", label: "Health score", icon: BrainCircuit },
   { id: "cashflow", label: "Cash flow", icon: ChartNoAxesCombined },
@@ -39,22 +38,41 @@ const tabs = [
 ];
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [userType, setUserType] = useState("user");
+  const [activeTab, setActiveTab] = useState(
+    userType === "user" ? "business" : "overview",
+  );
   const [selectedBusinessGstin, setSelectedBusinessGstin] = useState(
     BORROWERS[0].gstin,
   );
+
   const selectedBusiness = BORROWERS.find(
     (business) => business.gstin === selectedBusinessGstin,
   );
 
+  const handleUserTypeChange = (value) => {
+    setActiveTab(
+      value === "bank" && activeTab === "business" ? "overview" : activeTab,
+    );
+    setUserType(value);
+  };
+
+  const tabList =
+    userType === "user"
+      ? [{ id: "business", label: "Business", icon: UserRound }, ...tabs]
+      : tabs;
+
   function renderContent() {
     switch (activeTab) {
       case "business":
-        return (
-          <BusinessSection
-            profile={getBusinessProfileByGstin(selectedBusinessGstin)}
-          />
-        );
+        if (userType === "user") {
+          return (
+            <BusinessSection
+              profile={getBusinessProfileByGstin(selectedBusinessGstin)}
+            />
+          );
+        }
+        return null;
       case "health":
         return <HealthScoreCard />;
       case "cashflow":
@@ -97,6 +115,8 @@ export default function Dashboard() {
             business={selectedBusiness}
             businesses={BORROWERS}
             onBusinessChange={setSelectedBusinessGstin}
+            userType={userType}
+            handleUserTypeChange={handleUserTypeChange}
           />
         </DsBox>
 
@@ -124,7 +144,7 @@ export default function Dashboard() {
           >
             <DsStack direction={{ xs: "column" }} spacing={1.5}>
               <DsStack direction={{ xs: "row", md: "column" }} spacing={2}>
-                {tabs.map((tab) => {
+                {tabList.map((tab) => {
                   const selected = activeTab === tab.id;
                   const Icon = tab.icon;
                   return (
@@ -171,7 +191,7 @@ export default function Dashboard() {
             }}
           >
             <DsTypography variant="headingBoldSmall" sx={{ mb: 2 }}>
-              {tabs.find((tab) => tab.id === activeTab)?.label}
+              {tabList.find((tab) => tab.id === activeTab)?.label}
             </DsTypography>
             {renderContent()}
           </DsBox>

@@ -1,13 +1,20 @@
-import { Landmark, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+import { Landmark } from "lucide-react";
 import {
   DsBox,
   DsStack,
   DsTypography,
-  DsChip,
   DsSelect,
+  DsSwitch,
 } from "@am92/react-design-system";
 
-export default function Header({ business, businesses, onBusinessChange }) {
+export default function Header({
+  business,
+  businesses,
+  onBusinessChange,
+  userType,
+  handleUserTypeChange,
+}) {
   return (
     <DsStack
       direction="row"
@@ -45,7 +52,7 @@ export default function Header({ business, businesses, onBusinessChange }) {
         </DsBox>
       </DsStack>
 
-      <DsStack direction="row" spacing={2} alignItems="center">
+      <DsStack direction="row" spacing={2} alignItems="flex-start">
         <DsBox sx={{ minWidth: 200 }}>
           <DsSelect
             size="small"
@@ -65,6 +72,23 @@ export default function Header({ business, businesses, onBusinessChange }) {
             GSTIN {business.gstin}
           </DsTypography>
         </DsBox>
+
+        <DsSwitch
+          negativeLabel="User"
+          negativeValue="user"
+          onChange={(_e, value) => handleUserTypeChange(value)}
+          positiveLabel="Bank"
+          positiveValue="bank"
+          value={userType}
+          sx={{
+            "& .MuiToggleButtonGroup-grouped": {
+              width: "auto",
+              minWidth: 64,
+              px: 1.5,
+              whiteSpace: "nowrap",
+            },
+          }}
+        />
       </DsStack>
     </DsStack>
   );

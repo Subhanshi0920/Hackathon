@@ -32,17 +32,54 @@ function formatLakhs(value) {
 }
 
 /** One slider, grouped in its own bordered block with an icon + live value. */
-function SliderField({ icon, label, value, displayValue, min, max, minLabel, maxLabel, step, onChange, valueLabelFormat }) {
+function SliderField({
+  icon,
+  label,
+  value,
+  displayValue,
+  min,
+  max,
+  minLabel,
+  maxLabel,
+  step,
+  onChange,
+  valueLabelFormat,
+}) {
   return (
-    <DsBox sx={{ p: 2, borderRadius: 1.5, border: "1px solid", borderColor: "divider" }}>
-      <DsStack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
+    <DsBox
+      sx={{
+        p: 2,
+        borderRadius: 1.5,
+        border: "1px solid",
+        borderColor: "divider",
+      }}
+    >
+      <DsStack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ mb: 1.5 }}
+      >
         <DsStack direction="row" spacing={1} alignItems="center">
-          <DsBox sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, borderRadius: 1, bgcolor: PALETTE.secondaryGrey10 }}>
+          <DsBox
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 26,
+              height: 26,
+              borderRadius: 1,
+              bgcolor: PALETTE.secondaryGrey10,
+            }}
+          >
             {icon}
           </DsBox>
           <DsTypography variant="bodyBoldSmall">{label}</DsTypography>
         </DsStack>
-        <DsTypography variant="headingBoldExtraSmall" sx={{ color: "primary.main" }}>
+        <DsTypography
+          variant="headingBoldExtraSmall"
+          sx={{ color: "primary.main" }}
+        >
           {displayValue}
         </DsTypography>
       </DsStack>
@@ -58,8 +95,12 @@ function SliderField({ icon, label, value, displayValue, min, max, minLabel, max
         sx={{ mb: 0.5 }}
       />
       <DsStack direction="row" justifyContent="space-between">
-        <DsTypography variant="supportRegularMetadata" color="text.secondary">{minLabel}</DsTypography>
-        <DsTypography variant="supportRegularMetadata" color="text.secondary">{maxLabel}</DsTypography>
+        <DsTypography variant="supportRegularMetadata" color="text.secondary">
+          {minLabel}
+        </DsTypography>
+        <DsTypography variant="supportRegularMetadata" color="text.secondary">
+          {maxLabel}
+        </DsTypography>
       </DsStack>
     </DsBox>
   );
@@ -93,7 +134,8 @@ export function InterestCalculatorCard() {
     setTenure(rec.tenureMonths);
   }
 
-  const { avgMonthlyInterestLakhs, totalRepaymentLakhs, totalInterestLakhs } = computeLoanMath(amount, rate, tenure);
+  const { avgMonthlyInterestLakhs, totalRepaymentLakhs, totalInterestLakhs } =
+    computeLoanMath(amount, rate, tenure);
 
   const donutData = [
     { name: "Principal", value: amount },
@@ -104,13 +146,25 @@ export function InterestCalculatorCard() {
   return (
     <DsCard variant="outlined">
       <DsCardContent>
-        <DsStack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+        <DsStack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{ mb: 0.5 }}
+        >
           <Percent size={16} color={PALETTE.primary} />
-          <DsTypography variant="headingBoldExtraSmall">Interest Calculator</DsTypography>
+          <DsTypography variant="headingBoldExtraSmall">
+            EMI Calculator
+          </DsTypography>
         </DsStack>
-        <DsTypography variant="supportRegularMetadata" color="text.secondary" sx={{ mb: 3, display: "block" }}>
-          Amount and tenure default from this business's GST/bank data. Interest compounds monthly on the full
-          principal, matching this facility's interest-only draw structure — drag any slider to explore other terms.
+        <DsTypography
+          variant="supportRegularMetadata"
+          color="text.secondary"
+          sx={{ mb: 3, display: "block" }}
+        >
+          Amount and tenure default from this business's GST/bank data. Interest
+          compounds monthly on the full principal, matching this facility's
+          interest-only draw structure — drag any slider to explore other terms.
         </DsTypography>
 
         <DsGrid container spacing={3}>
@@ -161,20 +215,52 @@ export function InterestCalculatorCard() {
 
           {/* Right: results, in parallel with the sliders */}
           <DsGrid size={{ xs: 12, md: 6 }}>
-            <DsBox sx={{ height: "100%", p: 2.5, borderRadius: 1.5, bgcolor: PALETTE.secondaryGrey10 }}>
-              <DsStack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 0.5 }}>
+            <DsBox
+              sx={{
+                height: "100%",
+                p: 2.5,
+                borderRadius: 1.5,
+                bgcolor: PALETTE.secondaryGrey10,
+              }}
+            >
+              <DsStack
+                direction="row"
+                spacing={0.75}
+                alignItems="center"
+                sx={{ mb: 0.5 }}
+              >
                 <TrendingUp size={13} color={PALETTE.secondaryGrey70} />
-                <DsTypography variant="supportRegularMetadata" color="text.secondary">Avg. Monthly Interest</DsTypography>
+                <DsTypography
+                  variant="supportRegularMetadata"
+                  color="text.secondary"
+                >
+                  Avg. Monthly Interest
+                </DsTypography>
               </DsStack>
-              <DsTypography variant="displayBoldMedium" sx={{ color: "primary.main", mb: 2 }}>
+              <DsTypography
+                variant="displayBoldMedium"
+                sx={{ color: "primary.main", mb: 2 }}
+              >
                 {formatLakhs(avgMonthlyInterestLakhs)}
               </DsTypography>
 
-              <DsStack direction="row" spacing={2.5} alignItems="center" sx={{ mb: 2 }}>
+              <DsStack
+                direction="row"
+                spacing={2.5}
+                alignItems="center"
+                sx={{ mb: 2 }}
+              >
                 <DsBox sx={{ width: 110, height: 110, flexShrink: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={donutData} dataKey="value" innerRadius={32} outerRadius={50} paddingAngle={2} stroke="none">
+                      <Pie
+                        data={donutData}
+                        dataKey="value"
+                        innerRadius={32}
+                        outerRadius={50}
+                        paddingAngle={2}
+                        stroke="none"
+                      >
                         {donutData.map((entry, i) => (
                           <Cell key={entry.name} fill={DONUT_COLORS[i]} />
                         ))}
@@ -185,19 +271,48 @@ export function InterestCalculatorCard() {
 
                 <DsStack spacing={1}>
                   <DsStack direction="row" spacing={0.75} alignItems="center">
-                    <DsBox sx={{ width: 9, height: 9, borderRadius: 0.5, bgcolor: "primary.main" }} />
+                    <DsBox
+                      sx={{
+                        width: 9,
+                        height: 9,
+                        borderRadius: 0.5,
+                        bgcolor: "primary.main",
+                      }}
+                    />
                     <DsBox>
-                      <DsTypography variant="bodyBoldSmall">{formatLakhs(amount)}</DsTypography>
-                      <DsTypography variant="supportRegularMetadata" color="text.secondary">Principal</DsTypography>
+                      <DsTypography variant="bodyBoldSmall">
+                        {formatLakhs(amount)}
+                      </DsTypography>
+                      <DsTypography
+                        variant="supportRegularMetadata"
+                        color="text.secondary"
+                      >
+                        Principal
+                      </DsTypography>
                     </DsBox>
                   </DsStack>
                   <DsStack direction="row" spacing={0.75} alignItems="center">
-                    <DsBox sx={{ width: 9, height: 9, borderRadius: 0.5, bgcolor: PALETTE.warningOrange }} />
+                    <DsBox
+                      sx={{
+                        width: 9,
+                        height: 9,
+                        borderRadius: 0.5,
+                        bgcolor: PALETTE.warningOrange,
+                      }}
+                    />
                     <DsBox>
-                      <DsTypography variant="bodyBoldSmall" sx={{ color: PALETTE.warningOrange }}>
+                      <DsTypography
+                        variant="bodyBoldSmall"
+                        sx={{ color: PALETTE.warningOrange }}
+                      >
                         {formatLakhs(totalInterestLakhs)}
                       </DsTypography>
-                      <DsTypography variant="supportRegularMetadata" color="text.secondary">Interest</DsTypography>
+                      <DsTypography
+                        variant="supportRegularMetadata"
+                        color="text.secondary"
+                      >
+                        Interest
+                      </DsTypography>
                     </DsBox>
                   </DsStack>
                 </DsStack>
@@ -206,8 +321,15 @@ export function InterestCalculatorCard() {
               <DsDivider sx={{ mb: 1.5 }} />
 
               <DsStack direction="row" justifyContent="space-between">
-                <DsTypography variant="supportRegularMetadata" color="text.secondary">Total Repayment</DsTypography>
-                <DsTypography variant="bodyBoldSmall">{formatLakhs(totalRepaymentLakhs)}</DsTypography>
+                <DsTypography
+                  variant="supportRegularMetadata"
+                  color="text.secondary"
+                >
+                  Total Repayment
+                </DsTypography>
+                <DsTypography variant="bodyBoldSmall">
+                  {formatLakhs(totalRepaymentLakhs)}
+                </DsTypography>
               </DsStack>
             </DsBox>
           </DsGrid>
