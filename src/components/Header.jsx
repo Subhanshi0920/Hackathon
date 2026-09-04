@@ -1,20 +1,13 @@
-import { useState } from "react";
 import { Landmark } from "lucide-react";
 import {
   DsBox,
   DsStack,
   DsTypography,
   DsSelect,
-  DsSwitch,
+  DsChip,
 } from "@am92/react-design-system";
 
-export default function Header({
-  business,
-  businesses,
-  onBusinessChange,
-  userType,
-  handleUserTypeChange,
-}) {
+export default function Header({ business, businesses, onBusinessChange }) {
   return (
     <DsStack
       direction="row"
@@ -72,23 +65,6 @@ export default function Header({
             GSTIN {business.gstin}
           </DsTypography>
         </DsBox>
-
-        <DsSwitch
-          negativeLabel="User"
-          negativeValue="user"
-          onChange={(_e, value) => handleUserTypeChange(value)}
-          positiveLabel="Bank"
-          positiveValue="bank"
-          value={userType}
-          sx={{
-            "& .MuiToggleButtonGroup-grouped": {
-              width: "auto",
-              minWidth: 64,
-              px: 1.5,
-              whiteSpace: "nowrap",
-            },
-          }}
-        />
       </DsStack>
     </DsStack>
   );

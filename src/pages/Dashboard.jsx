@@ -7,6 +7,7 @@ import {
   BarChart3,
   BrainCircuit,
   ChartNoAxesCombined,
+  Radar,
   UserRound,
   WalletCards,
 } from "lucide-react";
@@ -18,6 +19,7 @@ import {
 } from "@am92/react-design-system";
 import { AppDataProvider } from "../data/DataContext.jsx";
 import Header from "../components/Header.jsx";
+import OverviewSummary from "../components/OverviewSummary.jsx";
 import CompliancePulse from "../components/CompliancePulse.jsx";
 import HealthScoreCard from "../components/HealthScoreCard.jsx";
 import CashFlowCard from "../components/CashFlowCard.jsx";
@@ -26,22 +28,25 @@ import {
   WorkingCapitalCard,
 } from "../components/SecondaryCards.jsx";
 import { BusinessSection } from "../components/BusinessSection.jsx";
+import { RiskFactorsCard } from "../components/RiskFactorsCard.jsx";
 import { InterestCalculatorCard } from "../components/InterestCalculatorCard.jsx";
 import { BORROWERS, getBusinessProfileByGstin } from "../data/calculations.js";
 
+// Bank-perspective dashboard only — every tab here answers "is this business
+// safe to lend to", so the old per-user "Business" tab is now just one more
+// bank-facing section rather than a separate user-mode view.
 const tabs = [
+  { id: "business", label: "Business", icon: UserRound },
   { id: "overview", label: "Overview", icon: Activity },
+  { id: "risk", label: "Risk Factors", icon: Radar },
   { id: "health", label: "Health score", icon: BrainCircuit },
   { id: "cashflow", label: "Cash flow", icon: ChartNoAxesCombined },
-  { id: "turnover", label: "GST turnover", icon: BarChart3 },
+  { id: "turnover", label: "GST & Compliance", icon: BarChart3 },
   { id: "facility", label: "Credit offer", icon: WalletCards },
 ];
 
 export default function Dashboard() {
-  const [userType, setUserType] = useState("user");
-  const [activeTab, setActiveTab] = useState(
-    userType === "user" ? "business" : "overview",
-  );
+  const [activeTab, setActiveTab] = useState("business");
   const [selectedBusinessGstin, setSelectedBusinessGstin] = useState(
     BORROWERS[0].gstin,
   );
@@ -50,35 +55,27 @@ export default function Dashboard() {
     (business) => business.gstin === selectedBusinessGstin,
   );
 
-  const handleUserTypeChange = (value) => {
-    setActiveTab(
-      value === "bank" && activeTab === "business" ? "overview" : activeTab,
-    );
-    setUserType(value);
-  };
-
-  const tabList =
-    userType === "user"
-      ? [{ id: "business", label: "Business", icon: UserRound }, ...tabs]
-      : tabs;
-
   function renderContent() {
     switch (activeTab) {
       case "business":
-        if (userType === "user") {
-          return (
-            <BusinessSection
-              profile={getBusinessProfileByGstin(selectedBusinessGstin)}
-            />
-          );
-        }
-        return null;
+        return (
+          <BusinessSection
+            profile={getBusinessProfileByGstin(selectedBusinessGstin)}
+          />
+        );
+      case "risk":
+        return <RiskFactorsCard gstin={selectedBusinessGstin} />;
       case "health":
-        return <HealthScoreCard />;
+        return <HealthScoreCard gstin={selectedBusinessGstin} />;
       case "cashflow":
         return <CashFlowCard />;
       case "turnover":
-        return <TurnoverCard />;
+        return (
+          <DsStack spacing={2.5}>
+            <TurnoverCard />
+            <CompliancePulse />
+          </DsStack>
+        );
       case "facility":
         return (
           <DsStack spacing={2.5}>
@@ -87,7 +84,7 @@ export default function Dashboard() {
           </DsStack>
         );
       default:
-        return <CompliancePulse />;
+        return <OverviewSummary gstin={selectedBusinessGstin} />;
     }
   }
 
@@ -115,8 +112,6 @@ export default function Dashboard() {
             business={selectedBusiness}
             businesses={BORROWERS}
             onBusinessChange={setSelectedBusinessGstin}
-            userType={userType}
-            handleUserTypeChange={handleUserTypeChange}
           />
         </DsBox>
 
@@ -144,7 +139,7 @@ export default function Dashboard() {
           >
             <DsStack direction={{ xs: "column" }} spacing={1.5}>
               <DsStack direction={{ xs: "row", md: "column" }} spacing={2}>
-                {tabList.map((tab) => {
+                {tabs.map((tab) => {
                   const selected = activeTab === tab.id;
                   const Icon = tab.icon;
                   return (
@@ -191,7 +186,7 @@ export default function Dashboard() {
             }}
           >
             <DsTypography variant="headingBoldSmall" sx={{ mb: 2 }}>
-              {tabList.find((tab) => tab.id === activeTab)?.label}
+              {tabs.find((tab) => tab.id === activeTab)?.label}
             </DsTypography>
             {renderContent()}
           </DsBox>
