@@ -1,0 +1,122 @@
+{
+  "_business": "XYZ Collections Pvt. Ltd. — young, weak profile / high risk",
+  "gstin": "29AACCA1234F1Z7",
+
+  "_section_1_business_age": "From Certificate of Incorporation / GST registration",
+  "businessAge": {
+    "registeredSince": "2023-09-15",
+    "yearsInOperation": 2.9
+  },
+
+  "_section_2_cibil": "Pulled from bureau with consent — commercial + promoter",
+  "cibil": {
+    "score": 588,
+    "reportDate": "2026-08-01",
+    "enquiriesLast6Months": 7,
+    "overdueAccounts": 2,
+    "creditUtilizationPct": 81,
+    "history": [
+      { "quarter": "Q3 2025", "score": 622 },
+      { "quarter": "Q4 2025", "score": 605 },
+      { "quarter": "Q1 2026", "score": 594 },
+      { "quarter": "Q2 2026", "score": 588 }
+    ]
+  },
+
+  "_section_3_itr": "One row per filed ITR (last 2-3 FYs)",
+  "itr": [
+    { "financialYear": "2022-23", "grossTotalIncomeLakhs": 22, "taxPaidLakhs": 1.6, "filedOnTime": false },
+    { "financialYear": "2023-24", "grossTotalIncomeLakhs": 28, "taxPaidLakhs": 2.1, "filedOnTime": false },
+    { "financialYear": "2024-25", "grossTotalIncomeLakhs": 25, "taxPaidLakhs": 1.8, "filedOnTime": true }
+  ],
+
+  "_section_4_balance_sheet": "Latest AUDITED balance sheet",
+  "balanceSheet": {
+    "financialYear": "2024-25",
+    "totalAssetsLakhs": 41,
+    "totalLiabilitiesLakhs": 36,
+    "netWorthLakhs": 5,
+    "currentAssetsLakhs": 19,
+    "currentLiabilitiesLakhs": 24,
+    "totalDebtLakhs": 29
+  },
+
+  "_section_5_provisional_balance_sheet": "CA-certified provisional B/S for the ongoing FY",
+  "provisionalBalanceSheet": {
+    "financialYear": "2025-26 (Provisional, H1)",
+    "totalAssetsLakhs": 39,
+    "totalLiabilitiesLakhs": 38,
+    "netWorthLakhs": 1,
+    "currentAssetsLakhs": 17,
+    "currentLiabilitiesLakhs": 26,
+    "totalDebtLakhs": 31
+  },
+
+  "_section_6_gst": "registrationStatus + cancellationHistory from GST portal. Filing consistency computed live from GSTR-3B; static pct is fallback only",
+  "gstProfile": {
+    "registrationStatus": "Active",
+    "returnFilingConsistencyPct": 51,
+    "yearsSinceRegistration": 2.9,
+    "cancellationHistory": true
+  },
+
+  "_section_7_ownership": "From MOA/AOA, partnership deed, or MCA master data",
+  "ownership": {
+    "numberOfOwners": 1,
+    "ownershipStabilityYears": 2.9,
+    "owners": [
+      { "name": "P. Naveen Reddy", "sharePct": 100, "panVerified": true }
+    ]
+  },
+
+  "_section_8_bank_accounts": "One row per current account. Figures from bank statements",
+  "bankAccounts": [
+    { "bankName": "Kotak Mahindra Bank", "accountType": "Current", "accountAgeYears": 2.6, "avgMonthlyBalanceLakhs": 0.8, "bounceCountLast12Months": 6 }
+  ],
+
+  "_section_9_social_media": "Self-declared handles, then scraped. One row per platform",
+  "socialMedia": {
+    "platforms": [
+      { "name": "Instagram", "followers": 980, "engagementRatePct": 0.6, "verified": false },
+      { "name": "Facebook", "followers": 1450, "engagementRatePct": 0.5, "verified": false }
+    ],
+    "postFrequencyPerMonth": 1,
+    "sentimentScorePct": 44
+  },
+
+  "_section_10_google_rating": "Google Places API — rating + review count",
+  "googleRating": {
+    "rating": 2.9,
+    "totalReviews": 12,
+    "trend": [
+      { "quarter": "Q3 2025", "rating": 3.3 },
+      { "quarter": "Q4 2025", "rating": 3.1 },
+      { "quarter": "Q1 2026", "rating": 3.0 },
+      { "quarter": "Q2 2026", "rating": 2.9 }
+    ]
+  },
+
+  "_section_11_online_reviews": "Aggregated sentiment. positive+neutral+negative should total 100",
+  "onlineReviews": {
+    "positivePct": 33,
+    "neutralPct": 22,
+    "negativePct": 45,
+    "commonThemes": ["Missed deadlines", "Poor communication", "Refund delays"]
+  },
+
+  "_section_12_location": "address is the verified registered address. footTraffic / proximity / owned-leased from field investigation",
+  "location": {
+    "address": "Shed 9, Outer Ring Road Fringe, Bengaluru, Karnataka 560091",
+    "areaType": "Emerging/unlisted zone",
+    "footTraffic": "Low",
+    "proximityToTransportKm": 6.8,
+    "ownedOrLeased": "Leased"
+  },
+
+  "_section_13_competition": "competitorCountNearby from Google nearby-search; share estimated. Intensity label derived from the count",
+  "competition": {
+    "competitorCountNearby": 15,
+    "estimatedMarketSharePct": 3,
+    "competitiveIntensity": "High"
+  }
+}

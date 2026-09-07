@@ -44,10 +44,10 @@ import {
 } from "@am92/react-design-system";
 import { ScoreGauge, Stat } from "./Small.jsx";
 import {
-  getBusinessRiskProfileByGstin,
   buildBankFactorAssessment,
   competitiveIntensityOf,
 } from "../data/bankFactors.js";
+import { useAppData } from "../data/DataContext.jsx";
 
 const REVIEW_COLORS = {
   positivePct: PALETTE.successGreen,
@@ -255,7 +255,8 @@ function DetailCard({ icon: Icon, title, subtitle, weight, score, children }) {
 
 export function RiskFactorsCard({ gstin }) {
   const [activeGroup, setActiveGroup] = useState("summary");
-  const profile = getBusinessRiskProfileByGstin(gstin);
+  const { getRiskProfile } = useAppData();
+  const profile = getRiskProfile(gstin);
 
   if (!profile) {
     return (
@@ -967,11 +968,17 @@ export function RiskFactorsCard({ gstin }) {
               />
               <Stat
                 label="Intensity"
-                value={competitiveIntensityOf(profile.competition.competitorCountNearby)}
+                value={competitiveIntensityOf(
+                  profile.competition.competitorCountNearby,
+                )}
                 color={
-                  competitiveIntensityOf(profile.competition.competitorCountNearby) === "High"
+                  competitiveIntensityOf(
+                    profile.competition.competitorCountNearby,
+                  ) === "High"
                     ? PALETTE.errorRed
-                    : competitiveIntensityOf(profile.competition.competitorCountNearby) === "Moderate"
+                    : competitiveIntensityOf(
+                          profile.competition.competitorCountNearby,
+                        ) === "Moderate"
                       ? "#C9962C"
                       : PALETTE.successGreen
                 }

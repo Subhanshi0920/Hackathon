@@ -1,0 +1,126 @@
+{
+  "_business": "Anantha Textiles Pvt. Ltd. — established, strong profile",
+  "gstin": "29AACCA1234F1Z5",
+
+  "_section_1_business_age": "From Certificate of Incorporation / GST registration",
+  "businessAge": {
+    "registeredSince": "2019-07-01",
+    "yearsInOperation": 7.1
+  },
+
+  "_section_2_cibil": "Pulled from bureau with consent — commercial + promoter",
+  "cibil": {
+    "score": 782,
+    "reportDate": "2026-08-01",
+    "enquiriesLast6Months": 1,
+    "overdueAccounts": 0,
+    "creditUtilizationPct": 28,
+    "history": [
+      { "quarter": "Q3 2025", "score": 748 },
+      { "quarter": "Q4 2025", "score": 761 },
+      { "quarter": "Q1 2026", "score": 770 },
+      { "quarter": "Q2 2026", "score": 782 }
+    ]
+  },
+
+  "_section_3_itr": "One row per filed ITR (last 2-3 FYs). grossTotalIncomeLakhs from the computation, filedOnTime = filed on/before due date",
+  "itr": [
+    { "financialYear": "2022-23", "grossTotalIncomeLakhs": 168, "taxPaidLakhs": 21.4, "filedOnTime": true },
+    { "financialYear": "2023-24", "grossTotalIncomeLakhs": 194, "taxPaidLakhs": 26.8, "filedOnTime": true },
+    { "financialYear": "2024-25", "grossTotalIncomeLakhs": 221, "taxPaidLakhs": 31.5, "filedOnTime": true }
+  ],
+
+  "_section_4_balance_sheet": "Latest AUDITED balance sheet",
+  "balanceSheet": {
+    "financialYear": "2024-25",
+    "totalAssetsLakhs": 312,
+    "totalLiabilitiesLakhs": 148,
+    "netWorthLakhs": 164,
+    "currentAssetsLakhs": 156,
+    "currentLiabilitiesLakhs": 84,
+    "totalDebtLakhs": 96
+  },
+
+  "_section_5_provisional_balance_sheet": "CA-certified provisional B/S for the ongoing FY",
+  "provisionalBalanceSheet": {
+    "financialYear": "2025-26 (Provisional, H1)",
+    "totalAssetsLakhs": 338,
+    "totalLiabilitiesLakhs": 152,
+    "netWorthLakhs": 186,
+    "currentAssetsLakhs": 171,
+    "currentLiabilitiesLakhs": 88,
+    "totalDebtLakhs": 94
+  },
+
+  "_section_6_gst": "registrationStatus + cancellationHistory from GST portal. Filing consistency is computed live from uploaded GSTR-3B; the static pct here is only a fallback",
+  "gstProfile": {
+    "registrationStatus": "Active",
+    "returnFilingConsistencyPct": 92,
+    "yearsSinceRegistration": 7.1,
+    "cancellationHistory": false
+  },
+
+  "_section_7_ownership": "From MOA/AOA, partnership deed, or MCA master data",
+  "ownership": {
+    "numberOfOwners": 3,
+    "ownershipStabilityYears": 7.1,
+    "owners": [
+      { "name": "R. Ananth Kumar", "sharePct": 55, "panVerified": true },
+      { "name": "S. Lakshmi Kumar", "sharePct": 25, "panVerified": true },
+      { "name": "V. Ramesh", "sharePct": 20, "panVerified": true }
+    ]
+  },
+
+  "_section_8_bank_accounts": "One row per current account. avgMonthlyBalanceLakhs and bounceCountLast12Months from bank statements",
+  "bankAccounts": [
+    { "bankName": "HDFC Bank", "accountType": "Current", "accountAgeYears": 6.8, "avgMonthlyBalanceLakhs": 18.4, "bounceCountLast12Months": 0 },
+    { "bankName": "Axis Bank", "accountType": "Current", "accountAgeYears": 3.2, "avgMonthlyBalanceLakhs": 6.1, "bounceCountLast12Months": 1 }
+  ],
+
+  "_section_9_social_media": "Self-declared handles, then scraped. One row per platform",
+  "socialMedia": {
+    "platforms": [
+      { "name": "Instagram", "followers": 15200, "engagementRatePct": 3.2, "verified": true },
+      { "name": "Facebook", "followers": 8400, "engagementRatePct": 1.8, "verified": true },
+      { "name": "LinkedIn", "followers": 3100, "engagementRatePct": 4.6, "verified": true }
+    ],
+    "postFrequencyPerMonth": 14,
+    "sentimentScorePct": 82
+  },
+
+  "_section_10_google_rating": "Google Places API — rating + review count",
+  "googleRating": {
+    "rating": 4.5,
+    "totalReviews": 214,
+    "trend": [
+      { "quarter": "Q3 2025", "rating": 4.2 },
+      { "quarter": "Q4 2025", "rating": 4.3 },
+      { "quarter": "Q1 2026", "rating": 4.4 },
+      { "quarter": "Q2 2026", "rating": 4.5 }
+    ]
+  },
+
+  "_section_11_online_reviews": "Aggregated sentiment across Justdial / IndiaMART / Trustpilot etc. positive+neutral+negative should total 100",
+  "onlineReviews": {
+    "positivePct": 84,
+    "neutralPct": 10,
+    "negativePct": 6,
+    "commonThemes": ["Consistent quality", "On-time delivery", "Responsive support"]
+  },
+
+  "_section_12_location": "address is the verified registered address (city tier is derived from it). footTraffic / proximity / owned-leased come from field investigation",
+  "location": {
+    "address": "No. 42, Industrial Layout, Peenya, Bengaluru, Karnataka 560058",
+    "areaType": "Established industrial hub",
+    "footTraffic": "High",
+    "proximityToTransportKm": 1.1,
+    "ownedOrLeased": "Owned"
+  },
+
+  "_section_13_competition": "competitorCountNearby from Google nearby-search; market share estimated. Intensity label is derived from the count, not this field",
+  "competition": {
+    "competitorCountNearby": 6,
+    "estimatedMarketSharePct": 18,
+    "competitiveIntensity": "Moderate"
+  }
+}

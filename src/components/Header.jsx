@@ -1,13 +1,14 @@
-import { Landmark } from "lucide-react";
+import { Landmark, Upload } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   DsBox,
   DsStack,
   DsTypography,
-  DsSelect,
-  DsChip,
+  DsButton,
 } from "@am92/react-design-system";
 
-export default function Header({ business, businesses, onBusinessChange }) {
+export default function Header({ showReupload = false }) {
+  const navigate = useNavigate();
   return (
     <DsStack
       direction="row"
@@ -45,27 +46,17 @@ export default function Header({ business, businesses, onBusinessChange }) {
         </DsBox>
       </DsStack>
 
-      <DsStack direction="row" spacing={2} alignItems="flex-start">
-        <DsBox sx={{ minWidth: 200 }}>
-          <DsSelect
-            size="small"
-            value={business.gstin}
-            onChange={(event) => onBusinessChange(event.target.value)}
-            options={businesses.map((b) => ({ label: b.name, value: b.gstin }))}
-            sx={{
-              width: "250px",
-            }}
-          />
-          <DsTypography
-            variant="supportRegularMetadata"
-            color="text.secondary"
-            py={2}
-            px={1}
-          >
-            GSTIN {business.gstin}
-          </DsTypography>
-        </DsBox>
-      </DsStack>
+      {showReupload && (
+        <DsButton
+          size="small"
+          variant="outlined"
+          color="primary"
+          startIcon={<Upload size={15} />}
+          onClick={() => navigate("/upload")}
+        >
+          Re-upload documents
+        </DsButton>
+      )}
     </DsStack>
   );
 }

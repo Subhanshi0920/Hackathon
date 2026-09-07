@@ -2,13 +2,13 @@
  * Dashboard page to show GST filing, health score, cash flow, turnover andworking capital
  */
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import {
   Activity,
   BarChart3,
   ChartNoAxesCombined,
   Radar,
   UserRound,
-  WalletCards,
 } from "lucide-react";
 import {
   DsBox,
@@ -16,15 +16,12 @@ import {
   DsTypography,
   PALETTE,
 } from "@am92/react-design-system";
-import { AppDataProvider } from "../data/DataContext.jsx";
+import { useAppData } from "../data/DataContext.jsx";
 import Header from "../components/Header.jsx";
 import OverviewSummary from "../components/OverviewSummary.jsx";
 import CompliancePulse from "../components/CompliancePulse.jsx";
 import CashFlowCard from "../components/CashFlowCard.jsx";
-import {
-  TurnoverCard,
-  WorkingCapitalCard,
-} from "../components/SecondaryCards.jsx";
+import { TurnoverCard } from "../components/SecondaryCards.jsx";
 import { BusinessSection } from "../components/BusinessSection.jsx";
 import { RiskFactorsCard } from "../components/RiskFactorsCard.jsx";
 import { BORROWERS, getBusinessProfileByGstin } from "../data/calculations.js";
@@ -38,18 +35,19 @@ const tabs = [
   { id: "risk", label: "Risk Factors", icon: Radar },
   { id: "cashflow", label: "Cash flow", icon: ChartNoAxesCombined },
   { id: "turnover", label: "GST & Compliance", icon: BarChart3 },
-  { id: "facility", label: "Credit offer", icon: WalletCards },
 ];
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState("business");
-  const [selectedBusinessGstin, setSelectedBusinessGstin] = useState(
-    BORROWERS[0].gstin,
+  // Gate: no graphs until all three documents are uploaded on /upload.
+  const { gstr1Source, gstSource, bankSource } = useAppData();
+  const documentsReady = [gstr1Source, gstSource, bankSource].every(
+    (source) => source.kind === "uploaded",
   );
 
-  const selectedBusiness = BORROWERS.find(
-    (business) => business.gstin === selectedBusinessGstin,
-  );
+  const [activeTab, setActiveTab] = useState("business");
+  const selectedBusinessGstin = BORROWERS[0].gstin;
+
+  if (!documentsReady) return <Navigate to="/upload" replace />;
 
   function renderContent() {
     switch (activeTab) {
@@ -70,117 +68,107 @@ export default function Dashboard() {
             <CompliancePulse />
           </DsStack>
         );
-      case "facility":
-        return <WorkingCapitalCard />;
       default:
         return <OverviewSummary gstin={selectedBusinessGstin} />;
     }
   }
 
   return (
-    <AppDataProvider>
+    <DsBox
+      sx={{
+        height: { xs: "auto", md: "100vh" },
+        overflow: { xs: "visible", md: "hidden" },
+        bgcolor: PALETTE.secondaryGrey10,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <DsBox
         sx={{
-          height: { xs: "auto", md: "100vh" },
+          maxWidth: "100vw",
+          width: "100%",
+          mx: "auto",
+          pt: { xs: 3, md: 2 },
+          flexShrink: 0,
+        }}
+      >
+        <Header showReupload />
+      </DsBox>
+
+      <DsStack
+        direction={{ xs: "column", md: "row" }}
+        spacing={2.5}
+        sx={{
+          flex: 1,
+          minHeight: 0,
           overflow: { xs: "visible", md: "hidden" },
-          bgcolor: PALETTE.secondaryGrey10,
-          display: "flex",
-          flexDirection: "column",
         }}
       >
         <DsBox
+          component="nav"
+          aria-label="Dashboard sections"
           sx={{
-            maxWidth: "100vw",
-            width: "100%",
-            mx: "auto",
-            pt: { xs: 3, md: 2 },
+            width: { md: 250 },
             flexShrink: 0,
+            height: { xs: "auto", md: "100%" },
+            overflowX: { xs: "auto", md: "visible" },
+            overflowY: { md: "auto" },
+            borderRight: { md: "1px solid" },
+            borderColor: { md: "divider" },
           }}
         >
-          <Header
-            business={selectedBusiness}
-            businesses={BORROWERS}
-            onBusinessChange={setSelectedBusinessGstin}
-          />
+          <DsStack direction={{ xs: "column" }} spacing={1.5}>
+            <DsStack direction={{ xs: "row", md: "column" }} spacing={2}>
+              {tabs.map((tab) => {
+                const selected = activeTab === tab.id;
+                const Icon = tab.icon;
+                return (
+                  <DsBox
+                    key={tab.id}
+                    sx={{
+                      justifyContent: "flex-start",
+                      whiteSpace: "nowrap",
+                      minWidth: { xs: "max-content", md: "100%" },
+                      cursor: "pointer",
+                      bgcolor: selected
+                        ? "var(--ds-colour-actionPrimary)"
+                        : "inherit",
+                      color: selected ? "primary.contrastText" : "text.primary",
+                      px: 8,
+                      py: 1,
+                      borderRadius: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                      height: 40,
+                    }}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    <Icon size={18} />
+                    {tab.label}
+                  </DsBox>
+                );
+              })}
+            </DsStack>
+          </DsStack>
         </DsBox>
 
-        <DsStack
-          direction={{ xs: "column", md: "row" }}
-          spacing={2.5}
+        <DsBox
           sx={{
             flex: 1,
-            minHeight: 0,
-            overflow: { xs: "visible", md: "hidden" },
+            minWidth: 0,
+            height: { xs: "auto", md: "100%" },
+            overflowY: { xs: "visible", md: "auto" },
+            pr: { md: 1 },
+            pb: { md: 3 },
           }}
         >
-          <DsBox
-            component="nav"
-            aria-label="Dashboard sections"
-            sx={{
-              width: { md: 250 },
-              flexShrink: 0,
-              height: { xs: "auto", md: "100%" },
-              overflowX: { xs: "auto", md: "visible" },
-              overflowY: { md: "auto" },
-              borderRight: { md: "1px solid" },
-              borderColor: { md: "divider" },
-            }}
-          >
-            <DsStack direction={{ xs: "column" }} spacing={1.5}>
-              <DsStack direction={{ xs: "row", md: "column" }} spacing={2}>
-                {tabs.map((tab) => {
-                  const selected = activeTab === tab.id;
-                  const Icon = tab.icon;
-                  return (
-                    <DsBox
-                      key={tab.id}
-                      sx={{
-                        justifyContent: "flex-start",
-                        whiteSpace: "nowrap",
-                        minWidth: { xs: "max-content", md: "100%" },
-                        cursor: "pointer",
-                        bgcolor: selected
-                          ? "var(--ds-colour-actionPrimary)"
-                          : "inherit",
-                        color: selected
-                          ? "primary.contrastText"
-                          : "text.primary",
-                        px: 8,
-                        py: 1,
-                        borderRadius: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.5,
-                        height: 40,
-                      }}
-                      onClick={() => setActiveTab(tab.id)}
-                    >
-                      <Icon size={18} />
-                      {tab.label}
-                    </DsBox>
-                  );
-                })}
-              </DsStack>
-            </DsStack>
-          </DsBox>
-
-          <DsBox
-            sx={{
-              flex: 1,
-              minWidth: 0,
-              height: { xs: "auto", md: "100%" },
-              overflowY: { xs: "visible", md: "auto" },
-              pr: { md: 1 },
-              pb: { md: 3 },
-            }}
-          >
-            <DsTypography variant="headingBoldSmall" sx={{ mb: 2 }}>
-              {tabs.find((tab) => tab.id === activeTab)?.label}
-            </DsTypography>
-            {renderContent()}
-          </DsBox>
-        </DsStack>
-      </DsBox>
-    </AppDataProvider>
+          <DsTypography variant="headingBoldSmall" sx={{ mb: 2 }}>
+            {tabs.find((tab) => tab.id === activeTab)?.label}
+          </DsTypography>
+          {renderContent()}
+        </DsBox>
+      </DsStack>
+    </DsBox>
   );
 }

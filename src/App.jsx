@@ -1,17 +1,21 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AppDataProvider } from "./data/DataContext.jsx";
+import Upload from "./pages/Upload.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 
-// Route table lives here — add new <Route> entries below as new pages
-// (e.g. loan detail, application flow, RM view) come online. The
-// Dashboard's cards/buttons can then use useNavigate() or <Link> to
-// redirect into those routes.
+// AppDataProvider wraps the router so upload state (which docs are loaded)
+// is shared across the /upload and /dashboard routes — /dashboard is gated
+// on all three documents being uploaded (see Dashboard.jsx).
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-      </Routes>
-    </BrowserRouter>
+    <AppDataProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Navigate to="/upload" replace />} />
+          <Route path="/upload" element={<Upload />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
+      </BrowserRouter>
+    </AppDataProvider>
   );
 }

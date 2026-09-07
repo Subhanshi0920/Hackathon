@@ -1,13 +1,5 @@
 import { useRef, useState } from "react";
-import {
-  Upload,
-  FileText,
-  Users,
-  Landmark,
-  AlertCircle,
-  RotateCcw,
-  Download,
-} from "lucide-react";
+import { FileText, Download, RotateCcw, AlertCircle } from "lucide-react";
 import {
   DsCard,
   DsCardContent,
@@ -16,40 +8,30 @@ import {
   DsTypography,
   DsButton,
   DsIconButton,
+  DsChip,
   DsDivider,
   DsTooltip,
   PALETTE,
 } from "@am92/react-design-system";
 import { useAppData } from "../data/DataContext.jsx";
 import {
-  parseGstr1File,
-  parseGstFile,
-  parseBankFile,
-  downloadGstr1Template,
-  downloadGstTemplate,
-  downloadBankTemplate,
-  UploadValidationError,
-} from "../data/uploadParsers.js";
+  RISK_FACTORS,
+  parseRiskFactorFile,
+  downloadRiskTemplate,
+} from "../data/riskUploadParsers.js";
+import { UploadValidationError } from "../data/uploadParsers.js";
 
-/**
- * One upload row. Selecting a valid file applies it immediately (the
- * dashboard recalculates on the spot) — no staging, no Submit step.
- */
-function UploadSlot({
-  icon,
-  title,
-  accept,
-  activeSource,
-  parseFile,
-  onApply,
-  onReset,
-  onTemplate,
-}) {
+const FACTOR_KEYS = Object.keys(RISK_FACTORS);
+
+function RiskRow({ factorKey }) {
+  const spec = RISK_FACTORS[factorKey];
+  const { riskDocStatus, applyRiskDoc, clearRiskDoc } = useAppData();
   const inputRef = useRef(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  const uploaded = activeSource.kind === "uploaded";
+  const fileName = riskDocStatus[factorKey];
+  const uploaded = Boolean(fileName);
 
   async function handleChange(e) {
     const file = e.target.files?.[0];
@@ -57,17 +39,17 @@ function UploadSlot({
     setBusy(true);
     setError(null);
     try {
-      const doc = await parseFile(file);
-      onApply(doc, file.name);
+      const value = await parseRiskFactorFile(factorKey, file);
+      applyRiskDoc(factorKey, value, file.name);
     } catch (err) {
       setError(
         err instanceof UploadValidationError
           ? err.message
-          : "Couldn't read that file. Please check the format and try again.",
+          : "Couldn't read that file. Check the format and try again.",
       );
     } finally {
       setBusy(false);
-      e.target.value = ""; // allow re-uploading the same filename
+      e.target.value = "";
     }
   }
 
@@ -91,7 +73,7 @@ function UploadSlot({
           mt: 0.25,
         }}
       >
-        {icon}
+        <FileText size={15} color={PALETTE.primary} />
       </DsBox>
 
       <DsBox sx={{ flex: 1, minWidth: 0 }}>
@@ -101,7 +83,7 @@ function UploadSlot({
           alignItems="center"
           spacing={1}
         >
-          <DsTypography variant="bodyBoldSmall">{title}</DsTypography>
+          <DsTypography variant="bodyBoldSmall">{spec.label}</DsTypography>
           <DsStack
             direction="row"
             spacing={0.5}
@@ -109,13 +91,19 @@ function UploadSlot({
             sx={{ flexShrink: 0 }}
           >
             <DsTooltip title="Download template">
-              <DsIconButton size="small" onClick={onTemplate}>
+              <DsIconButton
+                size="small"
+                onClick={() => downloadRiskTemplate(factorKey)}
+              >
                 <Download size={14} />
               </DsIconButton>
             </DsTooltip>
             {uploaded && (
               <DsTooltip title="Reset to demo data">
-                <DsIconButton size="small" onClick={onReset}>
+                <DsIconButton
+                  size="small"
+                  onClick={() => clearRiskDoc(factorKey)}
+                >
                   <RotateCcw size={14} />
                 </DsIconButton>
               </DsTooltip>
@@ -138,7 +126,7 @@ function UploadSlot({
             color="text.secondary"
             sx={{ display: "block", mt: 0.25 }}
           >
-            {activeSource.fileName}
+            {fileName}
           </DsTypography>
         )}
 
@@ -163,7 +151,7 @@ function UploadSlot({
         <input
           ref={inputRef}
           type="file"
-          accept={accept}
+          accept=".csv,.xlsx,.xls"
           onChange={handleChange}
           style={{ display: "none" }}
         />
@@ -172,60 +160,40 @@ function UploadSlot({
   );
 }
 
-export function DataUploadCard() {
-  const {
-    gstr1Source,
-    gstSource,
-    bankSource,
-    setGstr1Document,
-    setGstDocument,
-    setBankDocument,
-    resetGstr1Document,
-    resetGstDocument,
-    resetBankDocument,
-  } = useAppData();
-
+/**
+ * File upload for the document-backed risk factors (ITR, balance sheet,
+ * provisional B/S, bank conduct). Everything else is typed into the
+ * Business profile form.
+ */
+export function RiskDocsCard() {
   return (
     <DsCard variant="outlined">
       <DsCardContent>
-        <DsStack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-          <Upload size={16} color={PALETTE.primary} />
+        <DsStack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{ mb: 0.5 }}
+        >
+          <FileText size={16} color={PALETTE.primary} />
           <DsTypography variant="headingBoldExtraSmall">
-            Upload Data
+            Financial documents
           </DsTypography>
+          <DsChip label="Optional" size="small" />
         </DsStack>
+        <DsTypography
+          variant="supportRegularMetadata"
+          color="text.secondary"
+          sx={{ display: "block", mb: 1.5 }}
+        >
+          These come from filings — upload the statement rather than retyping
+          it.
+        </DsTypography>
 
         <DsStack divider={<DsDivider />}>
-          <UploadSlot
-            icon={<Users size={15} color={PALETTE.primary} />}
-            title="GSTR-1 (Buyer Data)"
-            accept=".csv,.xlsx,.xls"
-            activeSource={gstr1Source}
-            parseFile={parseGstr1File}
-            onApply={setGstr1Document}
-            onReset={resetGstr1Document}
-            onTemplate={downloadGstr1Template}
-          />
-          <UploadSlot
-            icon={<FileText size={15} color={PALETTE.primary} />}
-            title="GSTR-3B (Filing Data)"
-            accept=".csv,.xlsx,.xls"
-            activeSource={gstSource}
-            parseFile={parseGstFile}
-            onApply={setGstDocument}
-            onReset={resetGstDocument}
-            onTemplate={downloadGstTemplate}
-          />
-          <UploadSlot
-            icon={<Landmark size={15} color={PALETTE.primary} />}
-            title="Bank Statement"
-            accept=".csv,.xlsx,.xls"
-            activeSource={bankSource}
-            parseFile={parseBankFile}
-            onApply={setBankDocument}
-            onReset={resetBankDocument}
-            onTemplate={downloadBankTemplate}
-          />
+          {FACTOR_KEYS.map((key) => (
+            <RiskRow key={key} factorKey={key} />
+          ))}
         </DsStack>
       </DsCardContent>
     </DsCard>

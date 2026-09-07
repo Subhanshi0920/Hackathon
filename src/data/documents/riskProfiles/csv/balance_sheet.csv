@@ -1,0 +1,7 @@
+gstin,type,financialYear,totalAssetsLakhs,totalLiabilitiesLakhs,netWorthLakhs,currentAssetsLakhs,currentLiabilitiesLakhs,totalDebtLakhs
+29AACCA1234F1Z5,Audited,2024-25,312,148,164,156,84,96
+29AACCA1234F1Z5,Provisional,2025-26 (H1),338,152,186,171,88,94
+29AACCA1234F1Z6,Audited,2024-25,118,79,39,52,46,61
+29AACCA1234F1Z6,Provisional,2025-26 (H1),121,84,37,50,49,65
+29AACCA1234F1Z7,Audited,2024-25,41,36,5,19,24,29
+29AACCA1234F1Z7,Provisional,2025-26 (H1),39,38,1,17,26,31

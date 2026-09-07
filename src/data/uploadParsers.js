@@ -78,7 +78,9 @@ function splitCsvLine(line) {
 function parseCsvText(text) {
   const lines = text.split(/\r\n|\n|\r/).filter((l) => l.trim().length > 0);
   if (lines.length < 2) {
-    throw new UploadValidationError("The file has a header row but no data rows.");
+    throw new UploadValidationError(
+      "The file has a header row but no data rows.",
+    );
   }
   const headers = splitCsvLine(lines[0]).map((h) => h.trim());
   return lines.slice(1).map((line) => {
@@ -107,10 +109,14 @@ async function readRows(file) {
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
   const firstSheetName = workbook.SheetNames[0];
-  if (!firstSheetName) throw new UploadValidationError("The file doesn't contain any sheet/data.");
+  if (!firstSheetName)
+    throw new UploadValidationError("The file doesn't contain any sheet/data.");
   const sheet = workbook.Sheets[firstSheetName];
   const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
-  if (rows.length === 0) throw new UploadValidationError("The file has a header row but no data rows.");
+  if (rows.length === 0)
+    throw new UploadValidationError(
+      "The file has a header row but no data rows.",
+    );
   return rows;
 }
 
@@ -120,7 +126,7 @@ function assertRequiredColumns(rows, required, fileLabel) {
   if (missing.length > 0) {
     throw new UploadValidationError(
       `${fileLabel} is missing required column${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}. ` +
-        `Download the template to see the exact columns expected.`
+        `Download the template to see the exact columns expected.`,
     );
   }
 }
@@ -138,7 +144,9 @@ export async function parseGstr1File(file) {
   const topBuyers = rows
     .map((row, i) => {
       if (!row.buyerName) {
-        throw new UploadValidationError(`Row ${i + 2}: buyerName cannot be blank.`);
+        throw new UploadValidationError(
+          `Row ${i + 2}: buyerName cannot be blank.`,
+        );
       }
       return {
         buyerGstin: toPlainTextOrEmpty(row.buyerGstin) || null,
@@ -165,7 +173,12 @@ export async function parseGstr1File(file) {
 // GSTR-3B filing upload -> gstr3bReturns.json shape
 // ---------------------------------------------------------------------------
 
-const GST_REQUIRED_COLUMNS = ["period", "label", "dueDate", "taxableTurnoverLakhs"];
+const GST_REQUIRED_COLUMNS = [
+  "period",
+  "label",
+  "dueDate",
+  "taxableTurnoverLakhs",
+];
 
 export async function parseGstFile(file) {
   const rows = await readRows(file);
@@ -173,7 +186,9 @@ export async function parseGstFile(file) {
 
   const returns = rows.map((row, i) => {
     if (!row.period || !row.label || !row.dueDate) {
-      throw new UploadValidationError(`Row ${i + 2}: period, label, and dueDate cannot be blank.`);
+      throw new UploadValidationError(
+        `Row ${i + 2}: period, label, and dueDate cannot be blank.`,
+      );
     }
     return {
       period: toPlainTextOrEmpty(row.period),
@@ -201,7 +216,12 @@ export async function parseGstFile(file) {
 // Bank statement upload -> bankTransactions.json shape
 // ---------------------------------------------------------------------------
 
-const BANK_REQUIRED_COLUMNS = ["period", "label", "customerReceiptsLakhs", "totalOutflowsLakhs"];
+const BANK_REQUIRED_COLUMNS = [
+  "period",
+  "label",
+  "customerReceiptsLakhs",
+  "totalOutflowsLakhs",
+];
 
 export async function parseBankFile(file) {
   const rows = await readRows(file);
@@ -209,7 +229,9 @@ export async function parseBankFile(file) {
 
   const monthly = rows.map((row, i) => {
     if (!row.period || !row.label) {
-      throw new UploadValidationError(`Row ${i + 2}: period and label cannot be blank.`);
+      throw new UploadValidationError(
+        `Row ${i + 2}: period and label cannot be blank.`,
+      );
     }
     return {
       period: toPlainTextOrEmpty(row.period),
@@ -227,14 +249,14 @@ export async function parseBankFile(file) {
   };
 }
 
-export { UploadValidationError };
+export { UploadValidationError, readRows };
 
 // ---------------------------------------------------------------------------
 // Downloadable templates, so a user knows exactly what columns are expected.
 // ---------------------------------------------------------------------------
 
-function downloadCsv(filename, headerRow, exampleRow) {
-  const csv = [headerRow.join(","), exampleRow.join(",")].join("\n");
+function downloadCsv(filename, headerRow, ...dataRows) {
+  const csv = [headerRow, ...dataRows].map((r) => r.join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -250,22 +272,188 @@ export function downloadGstr1Template() {
   downloadCsv(
     "gstr1-buyer-template.csv",
     ["buyerGstin", "buyerName", "valueLakhs", "invoiceCount"],
-    ["07AAECS4321G1Z8", "Example Buyer Pvt Ltd", "20", "28"]
+    ["07AAECS4321G1Z8", "Example Buyer Pvt Ltd", "20", "28"],
   );
 }
+
+const GST_MONTHS = [
+  [
+    "2024-04",
+    "Apr",
+    "2024-05-20",
+    "2024-05-18",
+    "7.6",
+    "1.37",
+    "0.80",
+    "0.57",
+    "2024-05-18",
+  ],
+  [
+    "2024-05",
+    "May",
+    "2024-06-20",
+    "2024-06-19",
+    "8.1",
+    "1.46",
+    "0.83",
+    "0.63",
+    "2024-06-19",
+  ],
+  [
+    "2024-06",
+    "Jun",
+    "2024-07-20",
+    "2024-07-17",
+    "8.4",
+    "1.51",
+    "0.88",
+    "0.63",
+    "2024-07-17",
+  ],
+  [
+    "2024-07",
+    "Jul",
+    "2024-08-20",
+    "2024-08-20",
+    "7.9",
+    "1.42",
+    "0.81",
+    "0.61",
+    "2024-08-20",
+  ],
+  [
+    "2024-08",
+    "Aug",
+    "2024-09-20",
+    "2024-09-16",
+    "8.6",
+    "1.55",
+    "0.90",
+    "0.65",
+    "2024-09-16",
+  ],
+  [
+    "2024-09",
+    "Sep",
+    "2024-10-20",
+    "2024-10-18",
+    "9.0",
+    "1.62",
+    "0.94",
+    "0.68",
+    "2024-10-18",
+  ],
+  [
+    "2024-10",
+    "Oct",
+    "2024-11-20",
+    "2024-11-19",
+    "9.5",
+    "1.71",
+    "0.99",
+    "0.72",
+    "2024-11-19",
+  ],
+  [
+    "2024-11",
+    "Nov",
+    "2024-12-20",
+    "2024-12-17",
+    "8.8",
+    "1.58",
+    "0.92",
+    "0.66",
+    "2024-12-17",
+  ],
+  [
+    "2024-12",
+    "Dec",
+    "2025-01-20",
+    "2025-01-20",
+    "9.2",
+    "1.66",
+    "0.95",
+    "0.71",
+    "2025-01-20",
+  ],
+  [
+    "2025-01",
+    "Jan",
+    "2025-02-20",
+    "2025-02-18",
+    "8.3",
+    "1.49",
+    "0.86",
+    "0.63",
+    "2025-02-18",
+  ],
+  [
+    "2025-02",
+    "Feb",
+    "2025-03-20",
+    "2025-03-19",
+    "8.0",
+    "1.44",
+    "0.82",
+    "0.62",
+    "2025-03-19",
+  ],
+  [
+    "2025-03",
+    "Mar",
+    "2025-04-20",
+    "2025-04-18",
+    "8.2",
+    "1.48",
+    "0.85",
+    "0.63",
+    "2025-04-18",
+  ],
+];
+
+const BANK_MONTHS = [
+  ["2024-04", "Apr", "7.1", "0.2", "5.4"],
+  ["2024-05", "May", "7.6", "0.3", "5.8"],
+  ["2024-06", "Jun", "7.9", "0.2", "6.0"],
+  ["2024-07", "Jul", "7.4", "0.4", "5.7"],
+  ["2024-08", "Aug", "8.0", "0.2", "6.1"],
+  ["2024-09", "Sep", "8.4", "0.3", "6.3"],
+  ["2024-10", "Oct", "8.9", "0.3", "6.6"],
+  ["2024-11", "Nov", "8.2", "0.2", "6.2"],
+  ["2024-12", "Dec", "8.6", "0.4", "6.5"],
+  ["2025-01", "Jan", "7.8", "0.2", "5.9"],
+  ["2025-02", "Feb", "7.5", "0.3", "5.8"],
+  ["2025-03", "Mar", "7.7", "0.3", "5.9"],
+];
 
 export function downloadGstTemplate() {
   downloadCsv(
     "gstr3b-filing-template.csv",
-    ["period", "label", "dueDate", "filingDate", "taxableTurnoverLakhs", "outputTaxLakhs", "inputTaxCreditLakhs", "taxPaidLakhs", "paidDate"],
-    ["2025-03", "Mar", "2025-04-20", "2025-04-18", "8.2", "1.48", "0.85", "0.63", "2025-04-18"]
+    [
+      "period",
+      "label",
+      "dueDate",
+      "filingDate",
+      "taxableTurnoverLakhs",
+      "outputTaxLakhs",
+      "inputTaxCreditLakhs",
+      "taxPaidLakhs",
+      "paidDate",
+    ],
+    ...GST_MONTHS,
   );
 }
 
 export function downloadBankTemplate() {
   downloadCsv(
     "bank-statement-template.csv",
-    ["period", "label", "customerReceiptsLakhs", "otherInflowsLakhs", "totalOutflowsLakhs"],
-    ["2025-03", "Mar", "7.5", "0.3", "5.7"]
+    [
+      "period",
+      "label",
+      "customerReceiptsLakhs",
+      "otherInflowsLakhs",
+      "totalOutflowsLakhs",
+    ],
+    ...BANK_MONTHS,
   );
 }

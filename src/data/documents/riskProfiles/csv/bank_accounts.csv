@@ -1,0 +1,5 @@
+gstin,bankName,accountType,accountAgeYears,avgMonthlyBalanceLakhs,bounceCountLast12Months
+29AACCA1234F1Z5,HDFC Bank,Current,6.8,18.4,0
+29AACCA1234F1Z5,Axis Bank,Current,3.2,6.1,1
+29AACCA1234F1Z6,ICICI Bank,Current,4.5,3.9,3
+29AACCA1234F1Z7,Kotak Mahindra Bank,Current,2.6,0.8,6

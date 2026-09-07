@@ -1,0 +1,124 @@
+{
+  "_business": "ABC Manufacturing Pvt. Ltd. — mid-tier, mixed signals",
+  "gstin": "29AACCA1234F1Z6",
+
+  "_section_1_business_age": "From Certificate of Incorporation / GST registration",
+  "businessAge": {
+    "registeredSince": "2021-11-01",
+    "yearsInOperation": 4.8
+  },
+
+  "_section_2_cibil": "Pulled from bureau with consent — commercial + promoter",
+  "cibil": {
+    "score": 671,
+    "reportDate": "2026-08-01",
+    "enquiriesLast6Months": 4,
+    "overdueAccounts": 1,
+    "creditUtilizationPct": 58,
+    "history": [
+      { "quarter": "Q3 2025", "score": 690 },
+      { "quarter": "Q4 2025", "score": 682 },
+      { "quarter": "Q1 2026", "score": 675 },
+      { "quarter": "Q2 2026", "score": 671 }
+    ]
+  },
+
+  "_section_3_itr": "One row per filed ITR (last 2-3 FYs)",
+  "itr": [
+    { "financialYear": "2022-23", "grossTotalIncomeLakhs": 74, "taxPaidLakhs": 7.9, "filedOnTime": true },
+    { "financialYear": "2023-24", "grossTotalIncomeLakhs": 81, "taxPaidLakhs": 8.6, "filedOnTime": false },
+    { "financialYear": "2024-25", "grossTotalIncomeLakhs": 79, "taxPaidLakhs": 8.1, "filedOnTime": true }
+  ],
+
+  "_section_4_balance_sheet": "Latest AUDITED balance sheet",
+  "balanceSheet": {
+    "financialYear": "2024-25",
+    "totalAssetsLakhs": 118,
+    "totalLiabilitiesLakhs": 79,
+    "netWorthLakhs": 39,
+    "currentAssetsLakhs": 52,
+    "currentLiabilitiesLakhs": 46,
+    "totalDebtLakhs": 61
+  },
+
+  "_section_5_provisional_balance_sheet": "CA-certified provisional B/S for the ongoing FY",
+  "provisionalBalanceSheet": {
+    "financialYear": "2025-26 (Provisional, H1)",
+    "totalAssetsLakhs": 121,
+    "totalLiabilitiesLakhs": 84,
+    "netWorthLakhs": 37,
+    "currentAssetsLakhs": 50,
+    "currentLiabilitiesLakhs": 49,
+    "totalDebtLakhs": 65
+  },
+
+  "_section_6_gst": "registrationStatus + cancellationHistory from GST portal. Filing consistency computed live from GSTR-3B; static pct is fallback only",
+  "gstProfile": {
+    "registrationStatus": "Active",
+    "returnFilingConsistencyPct": 74,
+    "yearsSinceRegistration": 4.8,
+    "cancellationHistory": false
+  },
+
+  "_section_7_ownership": "From MOA/AOA, partnership deed, or MCA master data",
+  "ownership": {
+    "numberOfOwners": 2,
+    "ownershipStabilityYears": 4.8,
+    "owners": [
+      { "name": "M. Suresh Babu", "sharePct": 60, "panVerified": true },
+      { "name": "K. Divya", "sharePct": 40, "panVerified": false }
+    ]
+  },
+
+  "_section_8_bank_accounts": "One row per current account. Figures from bank statements",
+  "bankAccounts": [
+    { "bankName": "ICICI Bank", "accountType": "Current", "accountAgeYears": 4.5, "avgMonthlyBalanceLakhs": 3.9, "bounceCountLast12Months": 3 }
+  ],
+
+  "_section_9_social_media": "Self-declared handles, then scraped. One row per platform",
+  "socialMedia": {
+    "platforms": [
+      { "name": "Instagram", "followers": 3800, "engagementRatePct": 1.4, "verified": false },
+      { "name": "Facebook", "followers": 5200, "engagementRatePct": 1.1, "verified": true },
+      { "name": "LinkedIn", "followers": 640, "engagementRatePct": 2.0, "verified": false }
+    ],
+    "postFrequencyPerMonth": 5,
+    "sentimentScorePct": 61
+  },
+
+  "_section_10_google_rating": "Google Places API — rating + review count",
+  "googleRating": {
+    "rating": 3.6,
+    "totalReviews": 47,
+    "trend": [
+      { "quarter": "Q3 2025", "rating": 3.8 },
+      { "quarter": "Q4 2025", "rating": 3.7 },
+      { "quarter": "Q1 2026", "rating": 3.6 },
+      { "quarter": "Q2 2026", "rating": 3.6 }
+    ]
+  },
+
+  "_section_11_online_reviews": "Aggregated sentiment. positive+neutral+negative should total 100",
+  "onlineReviews": {
+    "positivePct": 58,
+    "neutralPct": 20,
+    "negativePct": 22,
+    "commonThemes": ["Fair pricing", "Delayed dispatch", "Inconsistent packaging"]
+  },
+
+  "_section_12_location": "address is the verified registered address. footTraffic / proximity / owned-leased from field investigation",
+  "location": {
+    "address": "Plot 17, Yelahanka Industrial Estate, Bengaluru, Karnataka 560064",
+    "areaType": "Developing industrial zone",
+    "footTraffic": "Medium",
+    "proximityToTransportKm": 3.4,
+    "ownedOrLeased": "Leased"
+  },
+
+  "_section_13_competition": "competitorCountNearby from Google nearby-search; share estimated. Intensity label derived from the count",
+  "competition": {
+    "competitorCountNearby": 11,
+    "estimatedMarketSharePct": 7,
+    "competitiveIntensity": "High"
+  }
+}

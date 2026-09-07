@@ -17,10 +17,7 @@ import {
 } from "@am92/react-design-system";
 import { ScoreGauge, Stat } from "./Small.jsx";
 import { useAppData } from "../data/DataContext.jsx";
-import {
-  getBusinessRiskProfileByGstin,
-  buildBankFactorAssessment,
-} from "../data/bankFactors.js";
+import { buildBankFactorAssessment } from "../data/bankFactors.js";
 
 function SummaryTile({ icon: Icon, label, value, sub, color }) {
   return (
@@ -58,9 +55,10 @@ export default function OverviewSummary({ gstin }) {
     computeAverageMonthlyTurnoverLakhs,
     computeWorkingCapitalRecommendation,
     CASHFLOW,
+    getRiskProfile,
   } = useAppData();
 
-  const bankProfile = getBusinessRiskProfileByGstin(gstin);
+  const bankProfile = getRiskProfile(gstin);
   const bankAssessment = bankProfile
     ? buildBankFactorAssessment(bankProfile)
     : null;

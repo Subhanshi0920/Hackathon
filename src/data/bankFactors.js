@@ -10,7 +10,14 @@
 // the GST/bank-statement calculation pipeline (see calculations.js header).
 // ---------------------------------------------------------------------------
 
-import riskProfiles from "./documents/businessRiskFactors.json";
+// One file per business, kept human-editable — see documents/riskProfiles/README.md.
+// The `_business` / `_section_*` keys in those files are notes for whoever maintains
+// them; the scorers below ignore any key they don't explicitly read.
+import ananthaTextiles from "./documents/riskProfiles/anantha-textiles.json";
+import abcManufacturing from "./documents/riskProfiles/abc-manufacturing.json";
+import xyzCollections from "./documents/riskProfiles/xyz-collections.json";
+
+const riskProfiles = [ananthaTextiles, abcManufacturing, xyzCollections];
 import { extractCityFromAddress, getCityTier } from "./cityTiers.js";
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
