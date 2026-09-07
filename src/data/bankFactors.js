@@ -11,13 +11,48 @@
 // ---------------------------------------------------------------------------
 
 import riskProfiles from "./documents/businessRiskFactors.json";
+import { extractCityFromAddress, getCityTier } from "./cityTiers.js";
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
 const round1 = (n) => Math.round(n * 10) / 10;
 
+// ---------------------------------------------------------------------------
+// Maps an RBI tier (1-6, see cityTiers.js) to a 0-100 location-quality score
+// component. This mapping is OUR scoring policy — RBI defines the tiers
+// themselves by population, not what score a lender should assign to each
+// one, so this is the one part of the location logic that's a genuine
+// design choice rather than sourced from the RBI classification.
+// ---------------------------------------------------------------------------
+const TIER_SCORE = { 1: 90, 2: 75, 3: 60, 4: 45, 5: 30, 6: 15 };
+// If a registered address doesn't match anything in our Census reference
+// subset (see cityTiers.js), we don't want to silently guess Tier 1 or
+// Tier 6 — this deliberately-moderate fallback (Tier-3-equivalent) neither
+// rewards nor penalizes an address we simply don't have population data
+// for yet.
+const UNMATCHED_CITY_FALLBACK_SCORE = 60;
+
+function cityTierScoreOf(address) {
+  const cityName = extractCityFromAddress(address);
+  const { matched, tier } = getCityTier(cityName);
+  if (!matched) return UNMATCHED_CITY_FALLBACK_SCORE;
+  return TIER_SCORE[tier] ?? UNMATCHED_CITY_FALLBACK_SCORE;
+}
+
+// Derived from actual nearby-competitor count rather than trusted as a
+// separately-stored label — a stored "Low/Moderate/High" string could
+// silently disagree with the count it's supposed to summarize. This keeps
+// the two in permanent agreement.
+function competitiveIntensityOf(competitorCountNearby) {
+  if (competitorCountNearby < 5) return "Low";
+  if (competitorCountNearby <= 10) return "Moderate";
+  return "High";
+}
+
 export function getBusinessRiskProfileByGstin(gstin) {
   return riskProfiles.find((p) => p.gstin === gstin) || null;
 }
+
+export { competitiveIntensityOf };
 
 // ---- Individual factor scorers (each returns 0-100) -----------------------
 
@@ -48,9 +83,14 @@ function scoreBusinessAge(businessAge) {
 
 function scoreCibil(cibil) {
   const base = clamp(((cibil.score - 300) / (900 - 300)) * 100);
-  const utilizationPenalty = clamp((cibil.creditUtilizationPct - 30) * 0.6, 0, 25);
-  const enquiryPenalty = clamp(cibil.enquiriesLast6Months * 3, 0, 15);
-  const overduePenalty = clamp(cibil.overdueAccounts * 12, 0, 30);
+  // Penalties softened from the original version, which stacked hard enough
+  // that a "Fair" (650-700) CIBIL score — not actually alarming in Indian
+  // credit terms — could collapse to near-zero once utilization/enquiry/
+  // overdue penalties were added on top. These caps still meaningfully
+  // penalize real red flags, just without erasing the base score's meaning.
+  const utilizationPenalty = clamp((cibil.creditUtilizationPct - 30) * 0.35, 0, 15);
+  const enquiryPenalty = clamp(cibil.enquiriesLast6Months * 2, 0, 10);
+  const overduePenalty = clamp(cibil.overdueAccounts * 8, 0, 20);
   return clamp(base - utilizationPenalty - enquiryPenalty - overduePenalty);
 }
 
@@ -58,8 +98,21 @@ function scoreItr(itrRecords) {
   const onTimeShare = itrRecords.filter((r) => r.filedOnTime).length / itrRecords.length;
   const first = itrRecords[0].grossTotalIncomeLakhs;
   const last = itrRecords[itrRecords.length - 1].grossTotalIncomeLakhs;
-  const growthPct = first > 0 ? ((last - first) / first) * 100 : 0;
-  const growthScore = clamp(50 + growthPct);
+  const periods = itrRecords.length - 1;
+
+  // Previously this compared first-vs-last across however many years happened
+  // to be on file (e.g. a 2-year CUMULATIVE change) and fed it into a formula
+  // built assuming single-year swings, unclamped — inconsistent with how
+  // GST's YoY growth is measured (clamped to +/-20%) and sensitive to how
+  // much ITR history a business happened to have on file. Annualizing (CAGR)
+  // and clamping the same way makes the two growth signals comparable.
+  let growthPctAnnualized = 0;
+  if (periods > 0 && first > 0) {
+    growthPctAnnualized = (Math.pow(last / first, 1 / periods) - 1) * 100;
+  }
+  const clampedGrowth = clamp(growthPctAnnualized, -20, 20);
+  const growthScore = clamp(50 + clampedGrowth);
+
   return clamp(onTimeShare * 100 * 0.6 + growthScore * 0.4);
 }
 
@@ -80,10 +133,19 @@ function scoreProvisionalBalanceSheet(pbs, bs) {
   return clamp(50 + netWorthTrendPct * 0.5 + assetTrendPct * 0.5);
 }
 
-function scoreGst(gstProfile) {
+function scoreGst(gstProfile, liveCompliancePct) {
+  // Previously this read gstProfile.returnFilingConsistencyPct — a static
+  // number baked into businessRiskFactors.json, completely disconnected
+  // from computeCompliancePct() in calculations.js (the function that
+  // actually parses real GST filings and reacts live to uploads). That
+  // meant two "GST compliance" numbers could exist and permanently
+  // disagree. liveCompliancePct is now required from the caller; the
+  // static field is kept only as a fallback for contexts with no live
+  // GST data available at all.
+  const compliancePct = liveCompliancePct ?? gstProfile.returnFilingConsistencyPct;
   const statusScore = gstProfile.registrationStatus === "Active" ? 100 : 0;
   const cancellationPenalty = gstProfile.cancellationHistory ? 25 : 0;
-  return clamp(statusScore * 0.2 + gstProfile.returnFilingConsistencyPct * 0.8 - cancellationPenalty);
+  return clamp(statusScore * 0.2 + compliancePct * 0.8 - cancellationPenalty);
 }
 
 function scoreOwnership(ownership) {
@@ -118,14 +180,23 @@ function scoreOnlineReviews(reviews) {
 }
 
 function scoreLocation(location) {
+  // City tier is DERIVED from the verified registered address using RBI's
+  // official population-based classification (see cityTiers.js) — not
+  // trusted as a free-text claim. Foot traffic, transport proximity, and
+  // owned/leased status are treated as facts a bank would collect via
+  // field investigation (a real, standard part of SME underwriting — see
+  // any "Video PD"/"FI" step in a real credit process), not something the
+  // applicant self-declares, so those stay as provided.
+  const cityTierScore = cityTierScoreOf(location.address);
   const footTrafficScore = { High: 100, Medium: 65, Low: 30 }[location.footTraffic] ?? 50;
   const proximityScore = clamp(100 - location.proximityToTransportKm * 8);
   const tenureScore = location.ownedOrLeased === "Owned" ? 100 : 65;
-  return clamp(footTrafficScore * 0.5 + proximityScore * 0.25 + tenureScore * 0.25);
+  return clamp(cityTierScore * 0.3 + footTrafficScore * 0.35 + proximityScore * 0.175 + tenureScore * 0.175);
 }
 
 function scoreCompetition(competition) {
-  const intensityScore = { Low: 100, Moderate: 65, High: 35 }[competition.competitiveIntensity] ?? 50;
+  const derivedIntensity = competitiveIntensityOf(competition.competitorCountNearby);
+  const intensityScore = { Low: 100, Moderate: 65, High: 35 }[derivedIntensity] ?? 50;
   const shareScore = clamp(competition.estimatedMarketSharePct * 4);
   return clamp(intensityScore * 0.55 + shareScore * 0.45);
 }
@@ -151,8 +222,15 @@ const WEIGHTS = {
 /**
  * Builds the full bank-perspective factor assessment for one business's
  * risk profile (from getBusinessRiskProfileByGstin).
+ * @param {object} profile - the business's static risk profile
+ * @param {object} [options]
+ * @param {number} [options.liveGstCompliancePct] - the REAL, currently-
+ *   computed GST filing compliance % (from calculations.js's
+ *   computeCompliancePct()), which reacts to GST uploads. Falls back to
+ *   the static profile field only if not supplied.
  */
-export function buildBankFactorAssessment(profile) {
+export function buildBankFactorAssessment(profile, options = {}) {
+  const liveCompliancePct = options.liveGstCompliancePct;
   const raw = {
     socialMedia: scoreSocialMedia(profile.socialMedia),
     businessAge: scoreBusinessAge(profile.businessAge),
@@ -160,7 +238,7 @@ export function buildBankFactorAssessment(profile) {
     itr: scoreItr(profile.itr),
     balanceSheet: scoreBalanceSheet(profile.balanceSheet),
     provisionalBalanceSheet: scoreProvisionalBalanceSheet(profile.provisionalBalanceSheet, profile.balanceSheet),
-    gst: scoreGst(profile.gstProfile),
+    gst: scoreGst(profile.gstProfile, liveCompliancePct),
     ownership: scoreOwnership(profile.ownership),
     bankAccounts: scoreBankAccounts(profile.bankAccounts),
     googleRating: scoreGoogleRating(profile.googleRating),
@@ -169,9 +247,12 @@ export function buildBankFactorAssessment(profile) {
     competition: scoreCompetition(profile.competition),
   };
 
+  const displayedCompliancePct = liveCompliancePct ?? profile.gstProfile.returnFilingConsistencyPct;
+  const derivedIntensity = competitiveIntensityOf(profile.competition.competitorCountNearby);
+
   const FACTORS = [
     { key: "cibil", label: "CIBIL Score", value: profile.cibil.score, unit: "" },
-    { key: "gst", label: "GST Standing", value: profile.gstProfile.returnFilingConsistencyPct, unit: "%" },
+    { key: "gst", label: "GST Standing", value: round1(displayedCompliancePct), unit: "%" },
     { key: "itr", label: "ITR Track Record", value: profile.itr.length, unit: " yrs filed" },
     { key: "balanceSheet", label: "Balance Sheet", value: profile.balanceSheet.netWorthLakhs, unit: "L net worth" },
     { key: "businessAge", label: "Business Age", value: round1(profile.businessAge.yearsInOperation), unit: " yrs" },
@@ -182,7 +263,7 @@ export function buildBankFactorAssessment(profile) {
     { key: "ownership", label: "Ownership Stability", value: profile.ownership.numberOfOwners, unit: " owner(s)" },
     { key: "provisionalBalanceSheet", label: "Provisional B/S Trend", value: profile.provisionalBalanceSheet.netWorthLakhs, unit: "L net worth (H1)" },
     { key: "location", label: "Location Quality", value: profile.location.footTraffic, unit: "" },
-    { key: "competition", label: "Competitive Position", value: profile.competition.estimatedMarketSharePct, unit: "% share" },
+    { key: "competition", label: "Competitive Position", value: derivedIntensity, unit: "" },
   ].map((f) => ({ ...f, score: round1(raw[f.key]), weight: WEIGHTS[f.key] }));
 
   const overallScore = round1(

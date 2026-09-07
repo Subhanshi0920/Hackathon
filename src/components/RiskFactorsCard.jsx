@@ -46,6 +46,7 @@ import { ScoreGauge, Stat } from "./Small.jsx";
 import {
   getBusinessRiskProfileByGstin,
   buildBankFactorAssessment,
+  competitiveIntensityOf,
 } from "../data/bankFactors.js";
 
 const REVIEW_COLORS = {
@@ -966,11 +967,11 @@ export function RiskFactorsCard({ gstin }) {
               />
               <Stat
                 label="Intensity"
-                value={profile.competition.competitiveIntensity}
+                value={competitiveIntensityOf(profile.competition.competitorCountNearby)}
                 color={
-                  profile.competition.competitiveIntensity === "High"
+                  competitiveIntensityOf(profile.competition.competitorCountNearby) === "High"
                     ? PALETTE.errorRed
-                    : profile.competition.competitiveIntensity === "Moderate"
+                    : competitiveIntensityOf(profile.competition.competitorCountNearby) === "Moderate"
                       ? "#C9962C"
                       : PALETTE.successGreen
                 }
