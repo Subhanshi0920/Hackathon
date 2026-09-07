@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { FileText, Download, RotateCcw, AlertCircle } from "lucide-react";
+import { FileText, Receipt, Download, RotateCcw, AlertCircle } from "lucide-react";
 import {
   DsCard,
   DsCardContent,
@@ -19,7 +19,11 @@ import {
   parseRiskFactorFile,
   downloadRiskTemplate,
 } from "../data/riskUploadParsers.js";
-import { UploadValidationError } from "../data/uploadParsers.js";
+import {
+  UploadValidationError,
+  parseOfflineSalesFile,
+  downloadOfflineSalesTemplate,
+} from "../data/uploadParsers.js";
 
 const FACTOR_KEYS = Object.keys(RISK_FACTORS);
 
@@ -161,6 +165,143 @@ function RiskRow({ factorKey }) {
 }
 
 /**
+ * Offline sales isn't one of the RISK_FACTORS section overrides (see
+ * RiskRow above) — it's a standalone monthly reconciliation document, so it
+ * gets its own upload/reset handlers from DataContext instead of
+ * applyRiskDoc/clearRiskDoc.
+ */
+function OfflineSalesRow() {
+  const { offlineSalesSource, setOfflineSalesDocument, resetOfflineSalesDocument } = useAppData();
+  const inputRef = useRef(null);
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const uploaded = offlineSalesSource.kind === "uploaded";
+
+  async function handleChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const doc = await parseOfflineSalesFile(file);
+      setOfflineSalesDocument(doc, file.name);
+    } catch (err) {
+      setError(
+        err instanceof UploadValidationError
+          ? err.message
+          : "Couldn't read that file. Check the format and try again.",
+      );
+    } finally {
+      setBusy(false);
+      e.target.value = "";
+    }
+  }
+
+  return (
+    <DsStack
+      direction="row"
+      spacing={1.5}
+      alignItems="flex-start"
+      sx={{ py: 1.25 }}
+    >
+      <DsBox
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 30,
+          height: 30,
+          borderRadius: 1,
+          bgcolor: PALETTE.secondaryGrey10,
+          flexShrink: 0,
+          mt: 0.25,
+        }}
+      >
+        <Receipt size={15} color={PALETTE.primary} />
+      </DsBox>
+
+      <DsBox sx={{ flex: 1, minWidth: 0 }}>
+        <DsStack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          spacing={1}
+        >
+          <DsTypography variant="bodyBoldSmall">
+            Offline Sales (GST Reconciliation)
+          </DsTypography>
+          <DsStack
+            direction="row"
+            spacing={0.5}
+            alignItems="center"
+            sx={{ flexShrink: 0 }}
+          >
+            <DsTooltip title="Download template">
+              <DsIconButton size="small" onClick={downloadOfflineSalesTemplate}>
+                <Download size={14} />
+              </DsIconButton>
+            </DsTooltip>
+            {uploaded && (
+              <DsTooltip title="Reset to demo data">
+                <DsIconButton size="small" onClick={resetOfflineSalesDocument}>
+                  <RotateCcw size={14} />
+                </DsIconButton>
+              </DsTooltip>
+            )}
+            <DsButton
+              size="small"
+              variant="outlined"
+              color="primary"
+              loading={busy}
+              onClick={() => inputRef.current?.click()}
+            >
+              {uploaded ? "Replace" : "Upload"}
+            </DsButton>
+          </DsStack>
+        </DsStack>
+
+        {uploaded && (
+          <DsTypography
+            variant="supportRegularMetadata"
+            color="text.secondary"
+            sx={{ display: "block", mt: 0.25 }}
+          >
+            {offlineSalesSource.fileName}
+          </DsTypography>
+        )}
+
+        {error && (
+          <DsStack
+            direction="row"
+            spacing={0.5}
+            alignItems="flex-start"
+            sx={{ mt: 0.5 }}
+          >
+            <AlertCircle
+              size={12}
+              color={PALETTE.errorRed}
+              style={{ flexShrink: 0, marginTop: 1 }}
+            />
+            <DsTypography variant="supportRegularMetadata" color="error.main">
+              {error}
+            </DsTypography>
+          </DsStack>
+        )}
+
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".csv,.xlsx,.xls"
+          onChange={handleChange}
+          style={{ display: "none" }}
+        />
+      </DsBox>
+    </DsStack>
+  );
+}
+
+/**
  * File upload for the document-backed risk factors (ITR, balance sheet,
  * provisional B/S, bank conduct). Everything else is typed into the
  * Business profile form.
@@ -194,6 +335,7 @@ export function RiskDocsCard() {
           {FACTOR_KEYS.map((key) => (
             <RiskRow key={key} factorKey={key} />
           ))}
+          <OfflineSalesRow />
         </DsStack>
       </DsCardContent>
     </DsCard>

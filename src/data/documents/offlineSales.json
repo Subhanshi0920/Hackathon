@@ -1,0 +1,76 @@
+{
+  "source": "Business-reported (demo)",
+  "fetchedAt": "2026-08-18T09:00:00+05:30",
+  "monthly": [
+    {
+      "businessName": "ABC Traders",
+      "period": "2026-04",
+      "label": "Apr",
+      "gstReportedSales": 1000000,
+      "digitalSalesBankUpiCard": 620000,
+      "posCashSales": 330000,
+      "otherUnobservedSales": 50000,
+      "gstTotalSalesReconciled": 980000,
+      "cashBookSales": 320000,
+      "cashDeposits": 300000,
+      "accountingCashSales": 310000,
+      "confidence": "High"
+    },
+    {
+      "businessName": "ABC Traders",
+      "period": "2026-05",
+      "label": "May",
+      "gstReportedSales": 1050000,
+      "digitalSalesBankUpiCard": 650000,
+      "posCashSales": 350000,
+      "otherUnobservedSales": 50000,
+      "gstTotalSalesReconciled": 1020000,
+      "cashBookSales": 340000,
+      "cashDeposits": 315000,
+      "accountingCashSales": 325000,
+      "confidence": "High"
+    },
+    {
+      "businessName": "ABC Traders",
+      "period": "2026-06",
+      "label": "Jun",
+      "gstReportedSales": 1100000,
+      "digitalSalesBankUpiCard": 680000,
+      "posCashSales": 370000,
+      "otherUnobservedSales": 50000,
+      "gstTotalSalesReconciled": 1080000,
+      "cashBookSales": 360000,
+      "cashDeposits": 340000,
+      "accountingCashSales": 350000,
+      "confidence": "High"
+    },
+    {
+      "businessName": "ABC Traders",
+      "period": "2026-07",
+      "label": "Jul",
+      "gstReportedSales": 1150000,
+      "digitalSalesBankUpiCard": 710000,
+      "posCashSales": 390000,
+      "otherUnobservedSales": 50000,
+      "gstTotalSalesReconciled": 1120000,
+      "cashBookSales": 380000,
+      "cashDeposits": 360000,
+      "accountingCashSales": 370000,
+      "confidence": "High"
+    },
+    {
+      "businessName": "ABC Traders",
+      "period": "2026-08",
+      "label": "Aug",
+      "gstReportedSales": 1180000,
+      "digitalSalesBankUpiCard": 730000,
+      "posCashSales": 400000,
+      "otherUnobservedSales": 50000,
+      "gstTotalSalesReconciled": 1160000,
+      "cashBookSales": 395000,
+      "cashDeposits": 375000,
+      "accountingCashSales": 390000,
+      "confidence": "High"
+    }
+  ]
+}

@@ -38,6 +38,12 @@ export function AppDataProvider({ children }) {
   const [bankTransactions, setBankTransactions] = useState(
     DEFAULT_DOCUMENTS.bankTransactions,
   );
+  // Offline/cash sales aren't in GST filings at all — purely supplementary
+  // context a bank can factor in, so it's not part of the buildCalculations
+  // pipeline (which only knows gstr1/gstr3b/bankTransactions).
+  const [offlineSales, setOfflineSales] = useState(
+    DEFAULT_DOCUMENTS.offlineSales,
+  );
 
   // Track upload provenance so the UI can show "using uploaded file" vs "using demo data".
   const [gstr1Source, setGstr1Source] = useState({
@@ -46,6 +52,10 @@ export function AppDataProvider({ children }) {
   });
   const [gstSource, setGstSource] = useState({ kind: "demo", fileName: null });
   const [bankSource, setBankSource] = useState({
+    kind: "demo",
+    fileName: null,
+  });
+  const [offlineSalesSource, setOfflineSalesSource] = useState({
     kind: "demo",
     fileName: null,
   });
@@ -80,6 +90,11 @@ export function AppDataProvider({ children }) {
     setBankSource({ kind: "uploaded", fileName });
   }, []);
 
+  const setOfflineSalesDocument = useCallback((doc, fileName) => {
+    setOfflineSales(doc);
+    setOfflineSalesSource({ kind: "uploaded", fileName });
+  }, []);
+
   const resetGstr1Document = useCallback(() => {
     setGstr1(DEFAULT_DOCUMENTS.gstr1);
     setGstr1Source({ kind: "demo", fileName: null });
@@ -93,6 +108,11 @@ export function AppDataProvider({ children }) {
   const resetBankDocument = useCallback(() => {
     setBankTransactions(DEFAULT_DOCUMENTS.bankTransactions);
     setBankSource({ kind: "demo", fileName: null });
+  }, []);
+
+  const resetOfflineSalesDocument = useCallback(() => {
+    setOfflineSales(DEFAULT_DOCUMENTS.offlineSales);
+    setOfflineSalesSource({ kind: "demo", fileName: null });
   }, []);
 
   // ---- Business profile form ---------------------------------------------
@@ -168,6 +188,10 @@ export function AppDataProvider({ children }) {
       resetGstr1Document,
       resetGstDocument,
       resetBankDocument,
+      offlineSales,
+      offlineSalesSource,
+      setOfflineSalesDocument,
+      resetOfflineSalesDocument,
       profileForm,
       updateProfileForm,
       resetProfileForm,
@@ -188,6 +212,10 @@ export function AppDataProvider({ children }) {
       resetGstr1Document,
       resetGstDocument,
       resetBankDocument,
+      offlineSales,
+      offlineSalesSource,
+      setOfflineSalesDocument,
+      resetOfflineSalesDocument,
       profileForm,
       updateProfileForm,
       resetProfileForm,

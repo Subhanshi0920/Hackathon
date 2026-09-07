@@ -248,34 +248,90 @@ export function buildCalculations(documents) {
 
   const CASHFLOW = computeCashFlowForecast();
 
-  // ---- Working capital recommendation --------------------------------------
-  function computeWorkingCapitalRecommendation() {
-    const avgTurnover = computeAverageMonthlyTurnoverLakhs();
+  // ---- Seasonality ------------------------------------------------------
+  // Detects businesses like AC/cooler sellers whose turnover is structurally
+  // lumpy (high pre-summer, low in winter) rather than roughly steady, using
+  // only the 12 monthly turnover figures already on file — no extra upload
+  // needed. Used to soften the cash-flow "dip" penalty below for troughs
+  // that are an expected seasonal pattern rather than a real shortfall.
+  function computeSeasonality() {
+    const n = TURNOVER.length;
+    const mean = TURNOVER.reduce((s, v) => s + v, 0) / n;
+    const variance = TURNOVER.reduce((s, v) => s + (v - mean) ** 2, 0) / n;
+    const stdDev = Math.sqrt(variance);
+    const coefficientOfVariation = mean > 0 ? stdDev / mean : 0;
+    // CoV above ~0.35 reads as meaningfully lumpy rather than steady-with-noise.
+    const isSeasonal = coefficientOfVariation >= 0.35;
+
+    const peakIdx = TURNOVER.indexOf(Math.max(...TURNOVER));
+    const peakMonth = MONTHS[peakIdx];
+
+    // Months meaningfully below average count as an expected seasonal trough.
+    const troughThreshold = mean - 0.5 * stdDev;
+    const troughPeriods = new Set(
+      gstReturns.filter((r, i) => TURNOVER[i] <= troughThreshold).map((r) => r.period),
+    );
+
+    return {
+      coefficientOfVariation: +coefficientOfVariation.toFixed(2),
+      isSeasonal,
+      peakMonth,
+      troughPeriods,
+    };
+  }
+
+  // ---- Financials-only health score -----------------------------------------
+  // Deterministic rubric a caller (e.g. the AI insight prompt in
+  // OverviewSummary.jsx) can also be instructed to reproduce, so the AI's
+  // answer and this fallback stay comparable. Bank-perspective factors
+  // (CIBIL, ITR, etc.) live in bankFactors.js and are blended in by the
+  // caller, not here — this factory only knows about GST/bank documents.
+  function computeFinancialScore() {
+    const compliancePct = computeCompliancePct();
+    const yoyGrowthPct = computeYoYGrowthPct();
     const concentration = computeBuyerConcentration();
+    const clampedGrowth = Math.max(-20, Math.min(20, yoyGrowthPct));
+    const dip = CASHFLOW.find((c) => c.base !== null && c.base < 0);
+    const seasonality = computeSeasonality();
+    const dipIsSeasonalTrough = Boolean(
+      dip && seasonality.isSeasonal && seasonality.troughPeriods.has(dip.period),
+    );
+    // A dip that lines up with this business's own seasonal trough (e.g. an
+    // AC seller's winter low) still matters for facility sizing, but isn't
+    // the same red flag as an unexplained shortfall — softened penalty
+    // instead of the full -10.
+    const dipPenalty = dip ? (dipIsSeasonalTrough ? 4 : 10) : 0;
 
-    const sizingMultiple = 0.8;
-    const amountLakhs = +(avgTurnover * sizingMultiple).toFixed(1);
+    const score = Math.round(
+      Math.max(
+        0,
+        Math.min(
+          100,
+          50 +
+            compliancePct * 0.3 +
+            clampedGrowth * 0.5 -
+            (concentration.topBuyerPct / 100) * 15 -
+            dipPenalty,
+        ),
+      ),
+    );
 
-    const highConcentrationRisk = concentration.topBuyerPct >= 30;
-    const tenureMonths = highConcentrationRisk ? 6 : 12;
+    const band =
+      score >= 75 ? "Healthy — Fundable" :
+        score >= 55 ? "Stable — Monitor" :
+          score >= 35 ? "Caution — Review" :
+            "High Risk — Decline";
 
-    const shortfallMonth = CASHFLOW.find((c) => c.base !== null && c.base < 0);
+    const narrative =
+      `GST compliance is ${compliancePct}% on-time, turnover is ${yoyGrowthPct >= 0 ? "up" : "down"} ${Math.abs(yoyGrowthPct)}% YoY, ` +
+      `and the top buyer accounts for ${concentration.topBuyerPct}% of revenue.` +
+      (dip
+        ? dipIsSeasonalTrough
+          ? ` The stressed cash-flow case turns negative in ${dip.m}, consistent with this business's seasonal trough (peak month: ${seasonality.peakMonth}).`
+          : ` The stressed cash-flow case turns negative in ${dip.m}, outside this business's usual seasonal pattern.`
+        : " The stressed cash-flow case stays positive throughout.");
 
-    const bullets = [
-      shortfallMonth
-        ? `Covers projected ${shortfallMonth.m} shortfall with buffer`
-        : "Provides buffer for the normal working-capital cycle",
-      `Sized to ${sizingMultiple}× average monthly turnover (₹${avgTurnover}L)`,
-      "Interest-only draws against filed GST invoices",
-    ];
-
-    if (highConcentrationRisk) {
-      bullets.push(
-        `Shorter ${tenureMonths}-month review cycle — ${concentration.topBuyerName} accounts for ${concentration.topBuyerPct}% of revenue`
-      );
-    }
-
-    return { amountLakhs, facilityType: "Overdraft facility", tenureMonths, bullets };
+    return { score, band, narrative };
   }
 
   return {
@@ -297,6 +353,7 @@ export function buildCalculations(documents) {
     computeCashFlowForecast,
     describeCashFlowModel,
     CASHFLOW,
-    computeWorkingCapitalRecommendation,
+    computeSeasonality,
+    computeFinancialScore,
   };
 }

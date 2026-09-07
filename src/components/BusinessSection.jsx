@@ -15,15 +15,26 @@ import { DataUploadCard } from "./DataUploadCard.jsx";
 
 function initialsOf(name) {
   if (!name) return "?";
-  const words = name.replace(/(Pvt\.?|Private|Ltd\.?|Limited)/gi, "").trim().split(/\s+/);
-  return words.slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+  const words = name
+    .replace(/(Pvt\.?|Private|Ltd\.?|Limited)/gi, "")
+    .trim()
+    .split(/\s+/);
+  return words
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
 }
 
 function Field({ label, value }) {
   if (!value) return null;
   return (
     <DsBox>
-      <DsTypography variant="supportRegularMetadata" color="text.secondary" sx={{ display: "block", mb: 0.25 }}>
+      <DsTypography
+        variant="supportRegularMetadata"
+        color="text.secondary"
+        sx={{ display: "block", mb: 0.25 }}
+      >
         {label}
       </DsTypography>
       <DsTypography variant="bodyBoldSmall">{value}</DsTypography>
@@ -56,8 +67,17 @@ export function BusinessSection({ profile }) {
       <DsCard variant="outlined">
         <DsCardContent>
           {/* Identity header */}
-          <DsStack direction="row" spacing={2} alignItems="center" sx={{ mb: 2.5 }}>
-            <DsAvatar ds-size="L" ds-variant="text" sx={{ bgcolor: "primary.main" }}>
+          <DsStack
+            direction="row"
+            spacing={2}
+            alignItems="center"
+            sx={{ mb: 2.5 }}
+          >
+            <DsAvatar
+              ds-size="L"
+              ds-variant="text"
+              sx={{ bgcolor: "primary.main" }}
+            >
               {initialsOf(profile.legalName)}
             </DsAvatar>
             <DsBox sx={{ flex: 1, minWidth: 0 }}>
@@ -66,7 +86,13 @@ export function BusinessSection({ profile }) {
               </DsTypography>
               <DsStack direction="row" spacing={1} flexWrap="wrap">
                 <DsChip label={`GSTIN ${profile.gstin}`} size="small" />
-                {profile.constitution && <DsChip label={profile.constitution} size="small" variant="outlined" />}
+                {profile.constitution && (
+                  <DsChip
+                    label={profile.constitution}
+                    size="small"
+                    variant="outlined"
+                  />
+                )}
               </DsStack>
             </DsBox>
           </DsStack>
@@ -85,7 +111,10 @@ export function BusinessSection({ profile }) {
               <Field label="Filing Frequency" value={profile.filingFrequency} />
             </DsGrid>
             <DsGrid size={{ xs: 6, sm: 3 }}>
-              <Field label="Authorized Signatory" value={profile.authorizedSignatory} />
+              <Field
+                label="Authorized Signatory"
+                value={profile.authorizedSignatory}
+              />
             </DsGrid>
           </DsGrid>
 
@@ -94,22 +123,42 @@ export function BusinessSection({ profile }) {
           {/* Business & location */}
           <DsStack spacing={1.5} sx={{ mb: 2.5 }}>
             <DsStack direction="row" spacing={1.25} alignItems="flex-start">
-              <Briefcase size={15} color={PALETTE.secondaryGrey70} style={{ flexShrink: 0, marginTop: 2 }} />
+              <Briefcase
+                size={15}
+                color={PALETTE.secondaryGrey70}
+                style={{ flexShrink: 0, marginTop: 2 }}
+              />
               <DsBox>
-                <DsTypography variant="supportRegularMetadata" color="text.secondary" sx={{ display: "block" }}>
+                <DsTypography
+                  variant="supportRegularMetadata"
+                  color="text.secondary"
+                  sx={{ display: "block" }}
+                >
                   Nature of Business
                 </DsTypography>
-                <DsTypography variant="bodyRegularSmall">{profile.natureOfBusiness}</DsTypography>
+                <DsTypography variant="bodyRegularSmall">
+                  {profile.natureOfBusiness}
+                </DsTypography>
               </DsBox>
             </DsStack>
 
             <DsStack direction="row" spacing={1.25} alignItems="flex-start">
-              <MapPin size={15} color={PALETTE.secondaryGrey70} style={{ flexShrink: 0, marginTop: 2 }} />
+              <MapPin
+                size={15}
+                color={PALETTE.secondaryGrey70}
+                style={{ flexShrink: 0, marginTop: 2 }}
+              />
               <DsBox>
-                <DsTypography variant="supportRegularMetadata" color="text.secondary" sx={{ display: "block" }}>
+                <DsTypography
+                  variant="supportRegularMetadata"
+                  color="text.secondary"
+                  sx={{ display: "block" }}
+                >
                   Registered Address
                 </DsTypography>
-                <DsTypography variant="bodyRegularSmall">{profile.principalPlaceOfBusiness}</DsTypography>
+                <DsTypography variant="bodyRegularSmall">
+                  {profile.principalPlaceOfBusiness}
+                </DsTypography>
               </DsBox>
             </DsStack>
           </DsStack>
@@ -121,7 +170,10 @@ export function BusinessSection({ profile }) {
             {profile.contactEmail && (
               <DsStack direction="row" spacing={0.75} alignItems="center">
                 <Mail size={13} color={PALETTE.secondaryGrey70} />
-                <DsTypography variant="supportRegularMetadata" color="text.secondary">
+                <DsTypography
+                  variant="supportRegularMetadata"
+                  color="text.secondary"
+                >
                   {profile.contactEmail}
                 </DsTypography>
               </DsStack>
@@ -129,7 +181,10 @@ export function BusinessSection({ profile }) {
             {profile.contactPhone && (
               <DsStack direction="row" spacing={0.75} alignItems="center">
                 <Phone size={13} color={PALETTE.secondaryGrey70} />
-                <DsTypography variant="supportRegularMetadata" color="text.secondary">
+                <DsTypography
+                  variant="supportRegularMetadata"
+                  color="text.secondary"
+                >
                   {profile.contactPhone}
                 </DsTypography>
               </DsStack>
@@ -138,7 +193,7 @@ export function BusinessSection({ profile }) {
         </DsCardContent>
       </DsCard>
 
-      <DataUploadCard />
+      {/* <DataUploadCard /> */}
     </DsStack>
   );
 }

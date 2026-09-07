@@ -182,10 +182,6 @@ function scoreGoogleRating(googleRating) {
   return clamp(ratingScore * (0.6 + 0.4 * volumeConfidence));
 }
 
-function scoreOnlineReviews(reviews) {
-  return clamp(reviews.positivePct - reviews.negativePct * 0.5 + 20);
-}
-
 function scoreLocation(location) {
   // City tier is DERIVED from the verified registered address using RBI's
   // official population-based classification (see cityTiers.js) — not
@@ -208,7 +204,70 @@ function scoreCompetition(competition) {
   return clamp(intensityScore * 0.55 + shareScore * 0.45);
 }
 
-// ---- Weights (sum to 100) --------------------------------------------------
+const CONFIDENCE_SCORE = { High: 100, Medium: 65, Low: 30 };
+
+/**
+ * Scores how trustworthy a business's reported sales are, using the
+ * GST-vs-bank/cash reconciliation upload (offlineSales.json / the "Offline
+ * Sales" optional upload). Rather than a flat check, this dynamically
+ * weights TWO different reconciliation checks by how much of the
+ * business's actual revenue mix each channel represents:
+ *  - online-heavy businesses are mostly checked on how closely
+ *    gst_reported_sales tracks the bank-reconciled total (digital sales are
+ *    directly bank-traceable, so a gap here is the real red flag);
+ *  - offline/cash-heavy businesses are mostly checked on how tightly the
+ *    self-reported cash figures (cash book, deposits, accounting) agree
+ *    with each other, scaled by the reported confidence label (cash is
+ *    inherently less verifiable, so consistency + documentation matter more).
+ * The revenue mix itself comes from the data, not a guess.
+ */
+function scoreSalesChannelReconciliation(monthly) {
+  if (!monthly || monthly.length === 0) return null;
+
+  let onlineSum = 0;
+  let offlineSum = 0;
+  let digitalGapPctSum = 0;
+  let cashVariancePctSum = 0;
+  let confidenceSum = 0;
+
+  for (const m of monthly) {
+    const reconciled = m.gstTotalSalesReconciled || 0;
+    onlineSum += m.digitalSalesBankUpiCard || 0;
+    offlineSum += (m.posCashSales || 0) + (m.otherUnobservedSales || 0);
+
+    const gstReported = m.gstReportedSales || 0;
+    digitalGapPctSum += reconciled > 0 ? (Math.abs(gstReported - reconciled) / reconciled) * 100 : 0;
+
+    const cashFigures = [m.cashBookSales, m.cashDeposits, m.accountingCashSales].filter(
+      (v) => v != null,
+    );
+    const avgCash = cashFigures.length ? cashFigures.reduce((s, v) => s + v, 0) / cashFigures.length : 0;
+    const maxSpread = cashFigures.length ? Math.max(...cashFigures.map((v) => Math.abs(v - avgCash))) : 0;
+    cashVariancePctSum += avgCash > 0 ? (maxSpread / avgCash) * 100 : 0;
+
+    confidenceSum += CONFIDENCE_SCORE[m.confidence] ?? 60;
+  }
+
+  const totalObserved = onlineSum + offlineSum;
+  const onlinePct = totalObserved > 0 ? (onlineSum / totalObserved) * 100 : 50;
+  const offlinePct = 100 - onlinePct;
+
+  const n = monthly.length;
+  const avgDigitalGapPct = digitalGapPctSum / n;
+  const avgCashVariancePct = cashVariancePctSum / n;
+  const avgConfidenceScore = confidenceSum / n;
+
+  const digitalReconciliationScore = clamp(100 - avgDigitalGapPct * 4);
+  const cashReconciliationScore = clamp((100 - avgCashVariancePct * 3) * 0.7 + avgConfidenceScore * 0.3);
+
+  const score = clamp(
+    digitalReconciliationScore * (onlinePct / 100) + cashReconciliationScore * (offlinePct / 100),
+  );
+
+  return { score, onlinePct: round1(onlinePct), offlinePct: round1(offlinePct) };
+}
+
+// ---- Weights (sum to 100 across whichever factors are actually included) --
 
 const WEIGHTS = {
   cibil: 15,
@@ -217,13 +276,13 @@ const WEIGHTS = {
   balanceSheet: 10,
   businessAge: 8,
   bankAccounts: 8,
-  googleRating: 8,
-  onlineReviews: 8,
+  googleRating: 12,
   socialMedia: 5,
   ownership: 5,
   provisionalBalanceSheet: 5,
-  location: 4,
-  competition: 4,
+  location: 3,
+  competition: 3,
+  salesChannelReconciliation: 6,
 };
 
 /**
@@ -235,9 +294,15 @@ const WEIGHTS = {
  *   computed GST filing compliance % (from calculations.js's
  *   computeCompliancePct()), which reacts to GST uploads. Falls back to
  *   the static profile field only if not supplied.
+ * @param {Array} [options.offlineSalesMonthly] - the monthly GST-vs-bank/cash
+ *   reconciliation rows (from the optional Offline Sales upload). Adds a
+ *   13th "Sales Channel Reconciliation" factor when supplied; the other 12
+ *   factors' weights are renormalized to fill 100% when it's omitted.
  */
 export function buildBankFactorAssessment(profile, options = {}) {
   const liveCompliancePct = options.liveGstCompliancePct;
+  const salesChannel = scoreSalesChannelReconciliation(options.offlineSalesMonthly);
+
   const raw = {
     socialMedia: scoreSocialMedia(profile.socialMedia),
     businessAge: scoreBusinessAge(profile.businessAge),
@@ -249,15 +314,15 @@ export function buildBankFactorAssessment(profile, options = {}) {
     ownership: scoreOwnership(profile.ownership),
     bankAccounts: scoreBankAccounts(profile.bankAccounts),
     googleRating: scoreGoogleRating(profile.googleRating),
-    onlineReviews: scoreOnlineReviews(profile.onlineReviews),
     location: scoreLocation(profile.location),
     competition: scoreCompetition(profile.competition),
   };
+  if (salesChannel) raw.salesChannelReconciliation = salesChannel.score;
 
   const displayedCompliancePct = liveCompliancePct ?? profile.gstProfile.returnFilingConsistencyPct;
   const derivedIntensity = competitiveIntensityOf(profile.competition.competitorCountNearby);
 
-  const FACTORS = [
+  const FACTOR_DEFS = [
     { key: "cibil", label: "CIBIL Score", value: profile.cibil.score, unit: "" },
     { key: "gst", label: "GST Standing", value: round1(displayedCompliancePct), unit: "%" },
     { key: "itr", label: "ITR Track Record", value: profile.itr.length, unit: " yrs filed" },
@@ -265,16 +330,29 @@ export function buildBankFactorAssessment(profile, options = {}) {
     { key: "businessAge", label: "Business Age", value: round1(profile.businessAge.yearsInOperation), unit: " yrs" },
     { key: "bankAccounts", label: "Bank Conduct", value: profile.bankAccounts.length, unit: " a/c" },
     { key: "googleRating", label: "Google Rating", value: profile.googleRating.rating, unit: "★" },
-    { key: "onlineReviews", label: "Online Reviews", value: profile.onlineReviews.positivePct, unit: "% positive" },
     { key: "socialMedia", label: "Social Media Presence", value: profile.socialMedia.platforms.reduce((s, p) => s + p.followers, 0), unit: " followers" },
     { key: "ownership", label: "Ownership Stability", value: profile.ownership.numberOfOwners, unit: " owner(s)" },
     { key: "provisionalBalanceSheet", label: "Provisional B/S Trend", value: profile.provisionalBalanceSheet.netWorthLakhs, unit: "L net worth (H1)" },
     { key: "location", label: "Location Quality", value: profile.location.footTraffic, unit: "" },
     { key: "competition", label: "Competitive Position", value: derivedIntensity, unit: "" },
-  ].map((f) => ({ ...f, score: round1(raw[f.key]), weight: WEIGHTS[f.key] }));
+  ];
+  if (salesChannel) {
+    FACTOR_DEFS.push({
+      key: "salesChannelReconciliation",
+      label: "Sales Channel Reconciliation",
+      value: `${salesChannel.onlinePct}% online`,
+      unit: ` / ${salesChannel.offlinePct}% offline`,
+    });
+  }
 
+  const FACTORS = FACTOR_DEFS.map((f) => ({ ...f, score: round1(raw[f.key]), weight: WEIGHTS[f.key] }));
+
+  // Renormalize by the ACTUAL total weight of included factors (rather than
+  // assuming 100), so the score stays correct whether or not the optional
+  // sales-channel factor is present.
+  const totalWeight = FACTORS.reduce((sum, f) => sum + f.weight, 0);
   const overallScore = round1(
-    FACTORS.reduce((sum, f) => sum + f.score * (f.weight / 100), 0)
+    FACTORS.reduce((sum, f) => sum + f.score * f.weight, 0) / totalWeight
   );
 
   const band =

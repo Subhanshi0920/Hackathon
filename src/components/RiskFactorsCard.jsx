@@ -11,9 +11,6 @@ import {
   YAxis,
   LineChart,
   Line,
-  PieChart,
-  Pie,
-  Cell,
   Tooltip,
   CartesianGrid,
 } from "recharts";
@@ -27,10 +24,10 @@ import {
   Users,
   Wallet2,
   Star,
-  MessageSquareText,
   MapPinned,
   Swords,
   LayoutGrid,
+  ArrowLeftRight,
 } from "lucide-react";
 import {
   DsCard,
@@ -48,12 +45,6 @@ import {
   competitiveIntensityOf,
 } from "../data/bankFactors.js";
 import { useAppData } from "../data/DataContext.jsx";
-
-const REVIEW_COLORS = {
-  positivePct: PALETTE.successGreen,
-  neutralPct: "#C9962C",
-  negativePct: PALETTE.errorRed,
-};
 
 function ScoreBand({ score }) {
   const color =
@@ -88,10 +79,10 @@ const GROUPS = [
 // Maps each factor key (from bankFactors.js) to the tab it's detailed under,
 // used to build the condensed per-group summary shown on the Summary tab.
 const FACTOR_GROUPS = {
-  credit: ["cibil", "itr", "gst"],
+  credit: ["cibil", "itr", "gst", "salesChannelReconciliation"],
   financials: ["balanceSheet", "provisionalBalanceSheet", "bankAccounts"],
   profile: ["businessAge", "ownership", "location", "competition"],
-  reputation: ["googleRating", "onlineReviews", "socialMedia"],
+  reputation: ["googleRating", "socialMedia"],
 };
 
 function ScoreBar({ score }) {
@@ -255,7 +246,7 @@ function DetailCard({ icon: Icon, title, subtitle, weight, score, children }) {
 
 export function RiskFactorsCard({ gstin }) {
   const [activeGroup, setActiveGroup] = useState("summary");
-  const { getRiskProfile } = useAppData();
+  const { getRiskProfile, computeCompliancePct, offlineSales } = useAppData();
   const profile = getRiskProfile(gstin);
 
   if (!profile) {
@@ -270,30 +261,15 @@ export function RiskFactorsCard({ gstin }) {
     );
   }
 
-  const { FACTORS, overallScore, band } = buildBankFactorAssessment(profile);
+  const { FACTORS, overallScore, band } = buildBankFactorAssessment(profile, {
+    liveGstCompliancePct: computeCompliancePct(),
+    offlineSalesMonthly: offlineSales?.monthly,
+  });
   const radarData = FACTORS.map((f) => ({
     factor: f.label.replace(" ", "\n"),
     score: f.score,
   }));
   const byKey = Object.fromEntries(FACTORS.map((f) => [f.key, f]));
-
-  const reviewData = [
-    {
-      name: "Positive",
-      value: profile.onlineReviews.positivePct,
-      key: "positivePct",
-    },
-    {
-      name: "Neutral",
-      value: profile.onlineReviews.neutralPct,
-      key: "neutralPct",
-    },
-    {
-      name: "Negative",
-      value: profile.onlineReviews.negativePct,
-      key: "negativePct",
-    },
-  ];
 
   const socialData = profile.socialMedia.platforms.map((p) => ({
     name: p.name,
@@ -428,7 +404,9 @@ export function RiskFactorsCard({ gstin }) {
             <DsGrid key={g.id} size={{ xs: 12, sm: 6, lg: 3 }}>
               <OverviewGroupCard
                 group={g}
-                factors={FACTOR_GROUPS[g.id].map((k) => byKey[k])}
+                factors={FACTOR_GROUPS[g.id]
+                  .map((k) => byKey[k])
+                  .filter(Boolean)}
                 onClick={() => setActiveGroup(g.id)}
               />
             </DsGrid>
@@ -721,75 +699,6 @@ export function RiskFactorsCard({ gstin }) {
           sx={{ display: activeGroup === "reputation" ? undefined : "none" }}
         >
           <DetailCard
-            icon={MessageSquareText}
-            title="Online Reviews"
-            subtitle="Sentiment breakdown"
-            weight={byKey.onlineReviews.weight}
-            score={byKey.onlineReviews.score}
-          >
-            <DsStack direction="row" spacing={2} alignItems="center">
-              <DsBox sx={{ width: 90, height: 90, flexShrink: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={reviewData}
-                      dataKey="value"
-                      innerRadius={24}
-                      outerRadius={40}
-                      paddingAngle={2}
-                    >
-                      {reviewData.map((d) => (
-                        <Cell key={d.key} fill={REVIEW_COLORS[d.key]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </DsBox>
-              <DsStack spacing={0.5}>
-                {reviewData.map((d) => (
-                  <DsStack
-                    key={d.key}
-                    direction="row"
-                    spacing={0.75}
-                    alignItems="center"
-                  >
-                    <DsBox
-                      sx={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: 0.5,
-                        bgcolor: REVIEW_COLORS[d.key],
-                      }}
-                    />
-                    <DsTypography
-                      variant="supportRegularMetadata"
-                      color="text.secondary"
-                    >
-                      {d.name} {d.value}%
-                    </DsTypography>
-                  </DsStack>
-                ))}
-              </DsStack>
-            </DsStack>
-            <DsStack
-              direction="row"
-              spacing={0.75}
-              flexWrap="wrap"
-              sx={{ mt: 1.5 }}
-            >
-              {profile.onlineReviews.commonThemes.map((t) => (
-                <DsChip key={t} size="small" label={t} variant="outlined" />
-              ))}
-            </DsStack>
-          </DetailCard>
-        </DsGrid>
-
-        <DsGrid
-          size={{ xs: 12, sm: 6, lg: 4 }}
-          sx={{ display: activeGroup === "reputation" ? undefined : "none" }}
-        >
-          <DetailCard
             icon={Share2}
             title="Social Media Presence"
             subtitle={`${profile.socialMedia.postFrequencyPerMonth} posts/mo · ${profile.socialMedia.sentimentScorePct}% sentiment`}
@@ -908,6 +817,41 @@ export function RiskFactorsCard({ gstin }) {
             </DsStack>
           </DetailCard>
         </DsGrid>
+
+        {byKey.salesChannelReconciliation && (
+          <DsGrid
+            size={{ xs: 12, sm: 6, lg: 4 }}
+            sx={{ display: activeGroup === "credit" ? undefined : "none" }}
+          >
+            <DetailCard
+              icon={ArrowLeftRight}
+              title="Sales Channel Reconciliation"
+              subtitle={`${byKey.salesChannelReconciliation.value}${byKey.salesChannelReconciliation.unit}`}
+              weight={byKey.salesChannelReconciliation.weight}
+              score={byKey.salesChannelReconciliation.score}
+            >
+              <DsTypography variant="supportRegularInfo" color="text.secondary">
+                Blends how closely GST-reported sales track the bank-reconciled
+                total (digital channel) with how tightly cash book, deposits and
+                accounting cash sales agree (cash channel) — weighted by each
+                channel's actual share of revenue.
+              </DsTypography>
+              {offlineSales?.monthly && offlineSales.monthly.length < 12 && (
+                <DsTypography
+                  variant="supportRegularMetadata"
+                  color="text.secondary"
+                  sx={{ mt: 1, display: "block" }}
+                >
+                  Based on {offlineSales.monthly.length} month
+                  {offlineSales.monthly.length === 1 ? "" : "s"} of data — for
+                  seasonal businesses (e.g. AC/cooler sales), upload a full 12
+                  months so the online/offline mix and reconciliation reflect
+                  the whole year, not just one season.
+                </DsTypography>
+              )}
+            </DetailCard>
+          </DsGrid>
+        )}
 
         <DsGrid
           size={{ xs: 12, sm: 6, lg: 4 }}

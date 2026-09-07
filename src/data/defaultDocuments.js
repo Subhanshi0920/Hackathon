@@ -7,9 +7,11 @@
 import gstr3b from "./documents/gstr3bReturns.json";
 import gstr1 from "./documents/gstr1Buyers.json";
 import bankTransactions from "./documents/bankTransactions.json";
+import offlineSales from "./documents/offlineSales.json";
 
 export const DEFAULT_DOCUMENTS = {
   gstr3b,
   gstr1,
   bankTransactions,
+  offlineSales,
 };

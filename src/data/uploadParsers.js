@@ -249,6 +249,70 @@ export async function parseBankFile(file) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Offline sales upload -> offlineSales.json shape
+//
+// This is a GST-vs-actual sales reconciliation export (bank/UPI/card
+// receipts, POS cash, cash book, cash deposits, etc.) rather than a single
+// "offline sales" figure, so it's keyed by month like the other uploads but
+// carries many more reconciliation columns per row.
+// ---------------------------------------------------------------------------
+
+const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** Derives a short month label ("Apr") from a "YYYY-MM" period string. */
+function deriveMonthLabel(period) {
+  const match = /^\d{4}-(\d{2})$/.exec(period);
+  if (!match) return period;
+  return MONTH_LABELS[Number(match[1]) - 1] ?? period;
+}
+
+const OFFLINE_SALES_REQUIRED_COLUMNS = [
+  "business_name",
+  "month",
+  "gst_reported_sales",
+  "digital_sales_bank_upi_card",
+  "pos_cash_sales",
+  "gst_total_sales_reconciled",
+  "cash_book_sales",
+  "cash_deposits",
+  "accounting_cash_sales",
+];
+
+export async function parseOfflineSalesFile(file) {
+  const rows = await readRows(file);
+  assertRequiredColumns(rows, OFFLINE_SALES_REQUIRED_COLUMNS, "Offline sales file");
+
+  const monthly = rows.map((row, i) => {
+    if (!row.business_name || !row.month) {
+      throw new UploadValidationError(
+        `Row ${i + 2}: business_name and month cannot be blank.`,
+      );
+    }
+    const period = toPlainTextOrEmpty(row.month);
+    return {
+      businessName: toPlainTextOrEmpty(row.business_name),
+      period,
+      label: deriveMonthLabel(period),
+      gstReportedSales: toNumber(row.gst_reported_sales),
+      digitalSalesBankUpiCard: toNumber(row.digital_sales_bank_upi_card),
+      posCashSales: toNumber(row.pos_cash_sales),
+      otherUnobservedSales: toNumber(row.other_unobserved_sales, 0),
+      gstTotalSalesReconciled: toNumber(row.gst_total_sales_reconciled),
+      cashBookSales: toNumber(row.cash_book_sales),
+      cashDeposits: toNumber(row.cash_deposits),
+      accountingCashSales: toNumber(row.accounting_cash_sales),
+      confidence: toPlainTextOrEmpty(row.confidence) || "Unknown",
+    };
+  });
+
+  return {
+    source: "User upload",
+    fetchedAt: new Date().toISOString(),
+    monthly,
+  };
+}
+
 export { UploadValidationError, readRows };
 
 // ---------------------------------------------------------------------------
@@ -455,5 +519,33 @@ export function downloadBankTemplate() {
       "totalOutflowsLakhs",
     ],
     ...BANK_MONTHS,
+  );
+}
+
+const OFFLINE_SALES_MONTHS = [
+  ["ABC Traders", "2026-04", "1000000", "620000", "330000", "50000", "980000", "320000", "300000", "310000", "High"],
+  ["ABC Traders", "2026-05", "1050000", "650000", "350000", "50000", "1020000", "340000", "315000", "325000", "High"],
+  ["ABC Traders", "2026-06", "1100000", "680000", "370000", "50000", "1080000", "360000", "340000", "350000", "High"],
+  ["ABC Traders", "2026-07", "1150000", "710000", "390000", "50000", "1120000", "380000", "360000", "370000", "High"],
+  ["ABC Traders", "2026-08", "1180000", "730000", "400000", "50000", "1160000", "395000", "375000", "390000", "High"],
+];
+
+export function downloadOfflineSalesTemplate() {
+  downloadCsv(
+    "offline-sales-template.csv",
+    [
+      "business_name",
+      "month",
+      "gst_reported_sales",
+      "digital_sales_bank_upi_card",
+      "pos_cash_sales",
+      "other_unobserved_sales",
+      "gst_total_sales_reconciled",
+      "cash_book_sales",
+      "cash_deposits",
+      "accounting_cash_sales",
+      "confidence",
+    ],
+    ...OFFLINE_SALES_MONTHS,
   );
 }
