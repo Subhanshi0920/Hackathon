@@ -5,7 +5,6 @@ import { useState } from "react";
 import {
   Activity,
   BarChart3,
-  BrainCircuit,
   ChartNoAxesCombined,
   Radar,
   UserRound,
@@ -21,7 +20,6 @@ import { AppDataProvider } from "../data/DataContext.jsx";
 import Header from "../components/Header.jsx";
 import OverviewSummary from "../components/OverviewSummary.jsx";
 import CompliancePulse from "../components/CompliancePulse.jsx";
-import HealthScoreCard from "../components/HealthScoreCard.jsx";
 import CashFlowCard from "../components/CashFlowCard.jsx";
 import {
   TurnoverCard,
@@ -29,7 +27,6 @@ import {
 } from "../components/SecondaryCards.jsx";
 import { BusinessSection } from "../components/BusinessSection.jsx";
 import { RiskFactorsCard } from "../components/RiskFactorsCard.jsx";
-import { InterestCalculatorCard } from "../components/InterestCalculatorCard.jsx";
 import { BORROWERS, getBusinessProfileByGstin } from "../data/calculations.js";
 
 // Bank-perspective dashboard only — every tab here answers "is this business
@@ -39,7 +36,6 @@ const tabs = [
   { id: "business", label: "Business", icon: UserRound },
   { id: "overview", label: "Overview", icon: Activity },
   { id: "risk", label: "Risk Factors", icon: Radar },
-  { id: "health", label: "Health score", icon: BrainCircuit },
   { id: "cashflow", label: "Cash flow", icon: ChartNoAxesCombined },
   { id: "turnover", label: "GST & Compliance", icon: BarChart3 },
   { id: "facility", label: "Credit offer", icon: WalletCards },
@@ -65,8 +61,6 @@ export default function Dashboard() {
         );
       case "risk":
         return <RiskFactorsCard gstin={selectedBusinessGstin} />;
-      case "health":
-        return <HealthScoreCard gstin={selectedBusinessGstin} />;
       case "cashflow":
         return <CashFlowCard />;
       case "turnover":
@@ -77,12 +71,7 @@ export default function Dashboard() {
           </DsStack>
         );
       case "facility":
-        return (
-          <DsStack spacing={2.5}>
-            <WorkingCapitalCard />
-            <InterestCalculatorCard />
-          </DsStack>
-        );
+        return <WorkingCapitalCard />;
       default:
         return <OverviewSummary gstin={selectedBusinessGstin} />;
     }

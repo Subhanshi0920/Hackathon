@@ -278,42 +278,6 @@ export function buildCalculations(documents) {
     return { amountLakhs, facilityType: "Overdraft facility", tenureMonths, bullets };
   }
 
-  // ---- Health score ----------------------------------------------------
-  function computeHealthScore() {
-    const compliancePct = computeCompliancePct();
-    const yoyGrowthPct = computeYoYGrowthPct();
-    const concentration = computeBuyerConcentration();
-    const dip = CASHFLOW.find((c) => c.low !== null && c.low < 0);
-
-    let score = 50;
-    score += compliancePct * 0.3;
-    score += Math.max(-20, Math.min(20, yoyGrowthPct)) * 0.5;
-    score -= (concentration.topBuyerPct / 100) * 15;
-    if (dip) score -= 10;
-    score = Math.round(Math.max(0, Math.min(100, score)));
-
-    const band =
-      score >= 75 ? "Healthy — Fundable" :
-        score >= 55 ? "Stable — Monitor" :
-          score >= 35 ? "Caution — Review" :
-            "High Risk — Decline";
-
-    const missed = FILING_STATUS.filter((s) => s === "missed").length;
-    const late = FILING_STATUS.filter((s) => s === "late").length;
-
-    const narrative =
-      `GST compliance is ${compliancePct}% on-time (${missed} missed, ${late} late filing${missed + late === 1 ? "" : "s"}) ` +
-      `with turnover ${yoyGrowthPct >= 0 ? "up" : "down"} ${Math.abs(yoyGrowthPct)}% YoY. ` +
-      `${concentration.topBuyerName} accounts for ${concentration.topBuyerPct}% of revenue, a concentration risk if that relationship weakens. ` +
-      (dip
-        ? `The stressed cash-flow case (largest buyer's payment delayed) turns negative in ${dip.m}.`
-        : `The stressed cash-flow case stays positive across the forecast window.`);
-
-    return { score, band, narrative };
-  }
-
-  const FALLBACK_INSIGHT = computeHealthScore();
-
   return {
     MONTHS,
     FILING_STATUS,
@@ -334,7 +298,5 @@ export function buildCalculations(documents) {
     describeCashFlowModel,
     CASHFLOW,
     computeWorkingCapitalRecommendation,
-    computeHealthScore,
-    FALLBACK_INSIGHT,
   };
 }

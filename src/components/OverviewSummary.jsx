@@ -1,7 +1,6 @@
 import {
   Activity,
   BadgeIndianRupee,
-  BrainCircuit,
   ChartNoAxesCombined,
   Radar,
   Users,
@@ -54,7 +53,6 @@ function SummaryTile({ icon: Icon, label, value, sub, color }) {
 // GST turnover tab).
 export default function OverviewSummary({ gstin }) {
   const {
-    FALLBACK_INSIGHT,
     computeYoYGrowthPct,
     computeBuyerConcentration,
     computeAverageMonthlyTurnoverLakhs,
@@ -80,21 +78,6 @@ export default function OverviewSummary({ gstin }) {
   return (
     <DsStack spacing={2.5}>
       <DsGrid container spacing={2.5}>
-        <DsGrid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <SummaryTile
-            icon={BrainCircuit}
-            label="Health Score"
-            value={`${FALLBACK_INSIGHT.score}/100`}
-            sub={FALLBACK_INSIGHT.band}
-            color={
-              FALLBACK_INSIGHT.score >= 75
-                ? PALETTE.successGreen
-                : FALLBACK_INSIGHT.score >= 55
-                  ? "#C9962C"
-                  : PALETTE.errorRed
-            }
-          />
-        </DsGrid>
         <DsGrid size={{ xs: 12, sm: 6, lg: 3 }}>
           <SummaryTile
             icon={Radar}

@@ -153,7 +153,6 @@ export function WorkingCapitalCard() {
       const jsonStart = resultText.indexOf("{");
       const jsonEnd = resultText.lastIndexOf("}");
       if (jsonStart === -1 || jsonEnd <= jsonStart) {
-        // setInsight(FALLBACK_INSIGHT);
         throw new Error("The AI response did not contain a JSON object.");
       }
 
