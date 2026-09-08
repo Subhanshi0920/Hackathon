@@ -53,16 +53,21 @@ function SummaryTile({ icon: Icon, label, value, sub, color }) {
 // GST turnover tab).
 export default function OverviewSummary({ gstin }) {
   const {
+    computeCompliancePct,
     computeYoYGrowthPct,
     computeBuyerConcentration,
     computeAverageMonthlyTurnoverLakhs,
     computeWorkingCapitalRecommendation,
+    describeCashFlowModel,
     CASHFLOW,
   } = useAppData();
 
   const bankProfile = getBusinessRiskProfileByGstin(gstin);
   const bankAssessment = bankProfile
-    ? buildBankFactorAssessment(bankProfile)
+    ? buildBankFactorAssessment(bankProfile, {
+        liveGstCompliancePct: computeCompliancePct(),
+        collectionRatePct: describeCashFlowModel().collectionRatePct,
+      })
     : null;
 
   const yoyGrowthPct = computeYoYGrowthPct();

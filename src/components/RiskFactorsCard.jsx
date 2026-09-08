@@ -31,6 +31,7 @@ import {
   MapPinned,
   Swords,
   LayoutGrid,
+  Scale,
 } from "lucide-react";
 import {
   DsCard,
@@ -48,6 +49,7 @@ import {
   buildBankFactorAssessment,
   competitiveIntensityOf,
 } from "../data/bankFactors.js";
+import { useAppData } from "../data/DataContext.jsx";
 
 const REVIEW_COLORS = {
   positivePct: PALETTE.successGreen,
@@ -88,7 +90,7 @@ const GROUPS = [
 // Maps each factor key (from bankFactors.js) to the tab it's detailed under,
 // used to build the condensed per-group summary shown on the Summary tab.
 const FACTOR_GROUPS = {
-  credit: ["cibil", "itr", "gst"],
+  credit: ["cibil", "itr", "gst", "revenueReconciliation"],
   financials: ["balanceSheet", "provisionalBalanceSheet", "bankAccounts"],
   profile: ["businessAge", "ownership", "location", "competition"],
   reputation: ["googleRating", "onlineReviews", "socialMedia"],
@@ -213,7 +215,7 @@ function GroupTabs({ active, onChange }) {
   );
 }
 
-function DetailCard({ icon: Icon, title, subtitle, weight, score, children }) {
+function DetailCard({ icon: Icon, title, subtitle, score, children }) {
   return (
     <DsCard variant="outlined" sx={{ height: "100%" }}>
       <DsCardContent>
@@ -239,12 +241,6 @@ function DetailCard({ icon: Icon, title, subtitle, weight, score, children }) {
           </DsStack>
           <DsBox sx={{ textAlign: "right", flexShrink: 0 }}>
             <ScoreBand score={score} />
-            <DsTypography
-              variant="supportRegularMetadata"
-              color="text.secondary"
-            >
-              weight {weight}%
-            </DsTypography>
           </DsBox>
         </DsStack>
         {children}
@@ -255,6 +251,7 @@ function DetailCard({ icon: Icon, title, subtitle, weight, score, children }) {
 
 export function RiskFactorsCard({ gstin }) {
   const [activeGroup, setActiveGroup] = useState("summary");
+  const { computeCompliancePct, describeCashFlowModel } = useAppData();
   const profile = getBusinessRiskProfileByGstin(gstin);
 
   if (!profile) {
@@ -269,7 +266,10 @@ export function RiskFactorsCard({ gstin }) {
     );
   }
 
-  const { FACTORS, overallScore, band } = buildBankFactorAssessment(profile);
+  const { FACTORS, overallScore, band } = buildBankFactorAssessment(profile, {
+    liveGstCompliancePct: computeCompliancePct(),
+    collectionRatePct: describeCashFlowModel().collectionRatePct,
+  });
   const radarData = FACTORS.map((f) => ({
     factor: f.label.replace(" ", "\n"),
     score: f.score,
@@ -375,20 +375,12 @@ export function RiskFactorsCard({ gstin }) {
                       >
                         {f.label}
                       </DsTypography>
-                      <DsStack direction="row" spacing={1} alignItems="center">
-                        <DsTypography
-                          variant="supportRegularInfo"
-                          sx={{ fontWeight: 600 }}
-                        >
-                          {f.score}
-                        </DsTypography>
-                        <DsTypography
-                          variant="supportRegularMetadata"
-                          color="text.secondary"
-                        >
-                          ({f.weight}%)
-                        </DsTypography>
-                      </DsStack>
+                      <DsTypography
+                        variant="supportRegularInfo"
+                        sx={{ fontWeight: 600 }}
+                      >
+                        {f.score}
+                      </DsTypography>
                     </DsStack>
                   ))}
               </DsStack>
@@ -448,7 +440,6 @@ export function RiskFactorsCard({ gstin }) {
             icon={Gauge}
             title="CIBIL Score"
             subtitle={`Reported ${profile.cibil.reportDate}`}
-            weight={byKey.cibil.weight}
             score={byKey.cibil.score}
           >
             <DsBox sx={{ height: 90 }}>
@@ -506,7 +497,6 @@ export function RiskFactorsCard({ gstin }) {
             icon={ReceiptText}
             title="ITR Track Record"
             subtitle="Gross total income by financial year"
-            weight={byKey.itr.weight}
             score={byKey.itr.score}
           >
             <DsBox sx={{ height: 90 }}>
@@ -556,9 +546,6 @@ export function RiskFactorsCard({ gstin }) {
             icon={FileCheck2}
             title="Balance Sheet vs Provisional"
             subtitle={`${profile.balanceSheet.financialYear} → ${profile.provisionalBalanceSheet.financialYear}`}
-            weight={
-              byKey.balanceSheet.weight + byKey.provisionalBalanceSheet.weight
-            }
             score={
               (byKey.balanceSheet.score + byKey.provisionalBalanceSheet.score) /
               2
@@ -618,7 +605,6 @@ export function RiskFactorsCard({ gstin }) {
             icon={Landmark}
             title="Company Bank Account(s)"
             subtitle="Avg monthly balance, ₹ lakhs"
-            weight={byKey.bankAccounts.weight}
             score={byKey.bankAccounts.score}
           >
             <DsBox sx={{ height: 90 }}>
@@ -674,7 +660,6 @@ export function RiskFactorsCard({ gstin }) {
             icon={Star}
             title="Google Rating"
             subtitle={`${profile.googleRating.totalReviews} reviews`}
-            weight={byKey.googleRating.weight}
             score={byKey.googleRating.score}
           >
             <DsBox sx={{ height: 90 }}>
@@ -723,7 +708,6 @@ export function RiskFactorsCard({ gstin }) {
             icon={MessageSquareText}
             title="Online Reviews"
             subtitle="Sentiment breakdown"
-            weight={byKey.onlineReviews.weight}
             score={byKey.onlineReviews.score}
           >
             <DsStack direction="row" spacing={2} alignItems="center">
@@ -792,7 +776,6 @@ export function RiskFactorsCard({ gstin }) {
             icon={Share2}
             title="Social Media Presence"
             subtitle={`${profile.socialMedia.postFrequencyPerMonth} posts/mo · ${profile.socialMedia.sentimentScorePct}% sentiment`}
-            weight={byKey.socialMedia.weight}
             score={byKey.socialMedia.score}
           >
             <DsBox sx={{ height: 90 }}>
@@ -827,7 +810,6 @@ export function RiskFactorsCard({ gstin }) {
             icon={CalendarClock}
             title="Business Age"
             subtitle={`Registered ${profile.businessAge.registeredSince}`}
-            weight={byKey.businessAge.weight}
             score={byKey.businessAge.score}
           >
             <DsTypography
@@ -853,7 +835,6 @@ export function RiskFactorsCard({ gstin }) {
             icon={Users}
             title="Ownership"
             subtitle={`Stable for ${round(profile.ownership.ownershipStabilityYears)} yrs`}
-            weight={byKey.ownership.weight}
             score={byKey.ownership.score}
           >
             <DsStack spacing={0.75}>
@@ -887,13 +868,12 @@ export function RiskFactorsCard({ gstin }) {
             icon={Wallet2}
             title="GST Standing"
             subtitle={profile.gstProfile.registrationStatus}
-            weight={byKey.gst.weight}
             score={byKey.gst.score}
           >
             <DsStack direction="row" justifyContent="space-between">
               <Stat
                 label="Filing consistency"
-                value={`${profile.gstProfile.returnFilingConsistencyPct}%`}
+                value={`${byKey.gst.value}%`}
               />
               <Stat
                 label="Cancellation history"
@@ -910,13 +890,41 @@ export function RiskFactorsCard({ gstin }) {
 
         <DsGrid
           size={{ xs: 12, sm: 6, lg: 4 }}
+          sx={{ display: activeGroup === "credit" ? undefined : "none" }}
+        >
+          <DetailCard
+            icon={Scale}
+            title="Revenue Reconciliation"
+            subtitle="Collected (bank + cash bills) vs. GST-declared turnover"
+            score={byKey.revenueReconciliation.score}
+          >
+            <DsStack direction="row" justifyContent="space-between" alignItems="center">
+              <Stat
+                label="Collection rate"
+                value={`${byKey.revenueReconciliation.value}%`}
+                color={
+                  byKey.revenueReconciliation.value >= 85
+                    ? PALETTE.successGreen
+                    : byKey.revenueReconciliation.value >= 60
+                      ? "#C9962C"
+                      : PALETTE.errorRed
+                }
+              />
+            </DsStack>
+            <DsTypography variant="supportRegularMetadata" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+              100% means every rupee of declared turnover can be shown as actually collected — via bank receipts, or cash sales evidenced by bills. Below 100% may mean under-collection or overstated filings; upload Cash Sales bills if a meaningful share of revenue is cash-in-hand.
+            </DsTypography>
+          </DetailCard>
+        </DsGrid>
+
+        <DsGrid
+          size={{ xs: 12, sm: 6, lg: 4 }}
           sx={{ display: activeGroup === "profile" ? undefined : "none" }}
         >
           <DetailCard
             icon={MapPinned}
             title="Location"
             subtitle={profile.location.areaType}
-            weight={byKey.location.weight}
             score={byKey.location.score}
           >
             <DsStack spacing={0.5}>
@@ -957,7 +965,6 @@ export function RiskFactorsCard({ gstin }) {
             icon={Swords}
             title="Competition"
             subtitle={`${profile.competition.competitorCountNearby} nearby competitors`}
-            weight={byKey.competition.weight}
             score={byKey.competition.score}
           >
             <DsStack direction="row" justifyContent="space-between">

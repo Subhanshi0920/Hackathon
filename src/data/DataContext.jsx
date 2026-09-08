@@ -14,20 +14,23 @@ import { DEFAULT_DOCUMENTS } from "./defaultDocuments.js";
 const AppDataContext = createContext(null);
 
 export function AppDataProvider({ children }) {
-  // gstr1, gstr3b, and bankTransactions are the three documents this app
-  // lets the user replace via upload.
+  // gstr1, gstr3b, bankTransactions, and cashSales are the four documents
+  // this app lets the user replace via upload. cashSales (offline bills) is
+  // the only optional one — see uploadParsers.js for why it exists.
   const [gstr1, setGstr1] = useState(DEFAULT_DOCUMENTS.gstr1);
   const [gstr3b, setGstr3b] = useState(DEFAULT_DOCUMENTS.gstr3b);
   const [bankTransactions, setBankTransactions] = useState(DEFAULT_DOCUMENTS.bankTransactions);
+  const [cashSales, setCashSales] = useState(DEFAULT_DOCUMENTS.cashSales);
 
   // Track upload provenance so the UI can show "using uploaded file" vs "using demo data".
   const [gstr1Source, setGstr1Source] = useState({ kind: "demo", fileName: null });
   const [gstSource, setGstSource] = useState({ kind: "demo", fileName: null });
   const [bankSource, setBankSource] = useState({ kind: "demo", fileName: null });
+  const [cashSalesSource, setCashSalesSource] = useState({ kind: "none", fileName: null });
 
   const documents = useMemo(
-    () => ({ gstr1, gstr3b, bankTransactions }),
-    [gstr1, gstr3b, bankTransactions]
+    () => ({ gstr1, gstr3b, bankTransactions, cashSales }),
+    [gstr1, gstr3b, bankTransactions, cashSales]
   );
 
   // Recompute every calculation only when the underlying documents change,
@@ -67,30 +70,46 @@ export function AppDataProvider({ children }) {
     setBankSource({ kind: "demo", fileName: null });
   }, []);
 
+  const setCashSalesDocument = useCallback((doc, fileName) => {
+    setCashSales(doc);
+    setCashSalesSource({ kind: "uploaded", fileName });
+  }, []);
+
+  const resetCashSalesDocument = useCallback(() => {
+    setCashSales(DEFAULT_DOCUMENTS.cashSales);
+    setCashSalesSource({ kind: "none", fileName: null });
+  }, []);
+
   const value = useMemo(
     () => ({
       ...calc,
       gstr1Source,
       gstSource,
       bankSource,
+      cashSalesSource,
       setGstr1Document,
       setGstDocument,
       setBankDocument,
+      setCashSalesDocument,
       resetGstr1Document,
       resetGstDocument,
       resetBankDocument,
+      resetCashSalesDocument,
     }),
     [
       calc,
       gstr1Source,
       gstSource,
       bankSource,
+      cashSalesSource,
       setGstr1Document,
       setGstDocument,
       setBankDocument,
+      setCashSalesDocument,
       resetGstr1Document,
       resetGstDocument,
       resetBankDocument,
+      resetCashSalesDocument,
     ]
   );
 

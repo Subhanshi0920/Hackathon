@@ -202,6 +202,7 @@ export async function parseGstFile(file) {
 // ---------------------------------------------------------------------------
 
 const BANK_REQUIRED_COLUMNS = ["period", "label", "customerReceiptsLakhs", "totalOutflowsLakhs"];
+const CASH_SALES_REQUIRED_COLUMNS = ["period", "label", "cashSalesLakhs"];
 
 export async function parseBankFile(file) {
   const rows = await readRows(file);
@@ -228,6 +229,39 @@ export async function parseBankFile(file) {
 }
 
 export { UploadValidationError };
+
+// ---------------------------------------------------------------------------
+// Cash sales (offline bills) — for small shops where a real, meaningful
+// share of revenue is cash-in-hand, evidenced by physical bills/receipts
+// rather than a bank transaction. Without this, a legitimate cash-heavy
+// business looks like it's under-collecting relative to its GST-declared
+// turnover (which must include cash sales) — this document lets that gap
+// be proven and folded into cash flow instead of silently penalizing the
+// business for accepting cash. See calculations.js's calibrateCollectionModel
+// and computeCashFlowForecast for exactly how it's used.
+// ---------------------------------------------------------------------------
+export async function parseCashSalesFile(file) {
+  const rows = await readRows(file);
+  assertRequiredColumns(rows, CASH_SALES_REQUIRED_COLUMNS, "Cash sales (offline bills) file");
+
+  const monthly = rows.map((row, i) => {
+    if (!row.period || !row.label) {
+      throw new UploadValidationError(`Row ${i + 2}: period and label cannot be blank.`);
+    }
+    return {
+      period: toPlainTextOrEmpty(row.period),
+      label: toPlainTextOrEmpty(row.label),
+      cashSalesLakhs: toNumber(row.cashSalesLakhs),
+      billCount: toNumber(row.billCount, 0),
+    };
+  });
+
+  return {
+    source: "User upload",
+    fetchedAt: new Date().toISOString(),
+    monthly,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Downloadable templates, so a user knows exactly what columns are expected.
@@ -267,5 +301,13 @@ export function downloadBankTemplate() {
     "bank-statement-template.csv",
     ["period", "label", "customerReceiptsLakhs", "otherInflowsLakhs", "totalOutflowsLakhs"],
     ["2025-03", "Mar", "7.5", "0.3", "5.7"]
+  );
+}
+
+export function downloadCashSalesTemplate() {
+  downloadCsv(
+    "cash-sales-bills-template.csv",
+    ["period", "label", "cashSalesLakhs", "billCount"],
+    ["2025-03", "Mar", "3.2", "148"]
   );
 }

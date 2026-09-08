@@ -1,14 +1,16 @@
 import { useRef, useState } from "react";
-import { Upload, FileText, Users, Landmark, CheckCircle2, AlertCircle, RotateCcw, Download, Clock, X } from "lucide-react";
+import { Upload, FileText, Users, Landmark, Receipt, CheckCircle2, AlertCircle, RotateCcw, Download, Clock, X } from "lucide-react";
 import { DsCard, DsCardContent, DsBox, DsStack, DsTypography, DsButton, DsIconButton, DsChip, DsDivider, DsTooltip, PALETTE } from "@am92/react-design-system";
 import { useAppData } from "../data/DataContext.jsx";
 import {
   parseGstr1File,
   parseGstFile,
   parseBankFile,
+  parseCashSalesFile,
   downloadGstr1Template,
   downloadGstTemplate,
   downloadBankTemplate,
+  downloadCashSalesTemplate,
   UploadValidationError,
 } from "../data/uploadParsers.js";
 
@@ -17,7 +19,7 @@ import {
  * it only stages a pending change (held in DataUploadCard's state). Nothing
  * recalculates until the card's single Submit button is clicked.
  */
-function UploadSlot({ icon, title, accept, activeSource, pending, parseFile, onStage, onStageReset, onDiscardPending, onTemplate }) {
+function UploadSlot({ icon, title, accept, activeSource, pending, parseFile, onStage, onStageReset, onDiscardPending, onTemplate, emptyLabel = "Demo", optional = false }) {
   const inputRef = useRef(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -48,9 +50,14 @@ function UploadSlot({ icon, title, accept, activeSource, pending, parseFile, onS
 
       <DsBox sx={{ flex: 1, minWidth: 0 }}>
         <DsStack direction="row" justifyContent="space-between" alignItems="center">
-          <DsTypography variant="bodyBoldSmall">{title}</DsTypography>
+          <DsStack direction="row" spacing={0.75} alignItems="center">
+            <DsTypography variant="bodyBoldSmall">{title}</DsTypography>
+            {optional && (
+              <DsChip label="Optional" size="small" variant="outlined" color="default" />
+            )}
+          </DsStack>
           <DsChip
-            label={activeSource.kind === "uploaded" ? "Uploaded" : "Demo"}
+            label={activeSource.kind === "uploaded" ? "Uploaded" : emptyLabel}
             color={activeSource.kind === "uploaded" ? "success" : "default"}
             size="small"
           />
@@ -66,7 +73,7 @@ function UploadSlot({ icon, title, accept, activeSource, pending, parseFile, onS
           <DsStack direction="row" spacing={0.6} alignItems="center" sx={{ mt: 0.5 }}>
             <Clock size={12} color={PALETTE.warningOrange} style={{ flexShrink: 0 }} />
             <DsTypography variant="supportRegularMetadata" sx={{ color: PALETTE.warningOrange, flex: 1 }}>
-              {pending.kind === "reset" ? "Reset to demo data" : pending.fileName} — not yet applied
+              {pending.kind === "reset" ? (emptyLabel === "Demo" ? "Reset to demo data" : "Clear upload") : pending.fileName} — not yet applied
             </DsTypography>
             <DsBox onClick={onDiscardPending} sx={{ cursor: "pointer", display: "flex" }}>
               <X size={12} color={PALETTE.secondaryGrey70} />
@@ -93,7 +100,7 @@ function UploadSlot({ icon, title, accept, activeSource, pending, parseFile, onS
             </DsIconButton>
           </DsTooltip>
           {canReset && (
-            <DsTooltip title="Reset to demo data">
+            <DsTooltip title={emptyLabel === "Demo" ? "Reset to demo data" : "Clear upload"}>
               <DsIconButton size="small" onClick={onStageReset}>
                 <RotateCcw size={14} />
               </DsIconButton>
@@ -105,19 +112,22 @@ function UploadSlot({ icon, title, accept, activeSource, pending, parseFile, onS
   );
 }
 
-const EMPTY_PENDING = { gstr1: null, gst3b: null, bank: null };
+const EMPTY_PENDING = { gstr1: null, gst3b: null, bank: null, cashSales: null };
 
 export function DataUploadCard() {
   const {
     gstr1Source,
     gstSource,
     bankSource,
+    cashSalesSource,
     setGstr1Document,
     setGstDocument,
     setBankDocument,
+    setCashSalesDocument,
     resetGstr1Document,
     resetGstDocument,
     resetBankDocument,
+    resetCashSalesDocument,
   } = useAppData();
 
   const [pending, setPending] = useState(EMPTY_PENDING);
@@ -154,6 +164,13 @@ export function DataUploadCard() {
         resetBankDocument();
       } else {
         setBankDocument(pending.bank.doc, pending.bank.fileName);
+      }
+    }
+    if (pending.cashSales) {
+      if (pending.cashSales.kind === "reset") {
+        resetCashSalesDocument();
+      } else {
+        setCashSalesDocument(pending.cashSales.doc, pending.cashSales.fileName);
       }
     }
     setPending(EMPTY_PENDING);
@@ -209,6 +226,20 @@ export function DataUploadCard() {
             onStageReset={() => stage("bank", { kind: "reset" })}
             onDiscardPending={() => discard("bank")}
             onTemplate={downloadBankTemplate}
+          />
+          <UploadSlot
+            icon={<Receipt size={15} color={PALETTE.primary} />}
+            title="Cash Sales (Offline Bills)"
+            accept=".csv,.xlsx,.xls"
+            activeSource={cashSalesSource}
+            pending={pending.cashSales}
+            parseFile={parseCashSalesFile}
+            onStage={(doc, fileName) => stage("cashSales", { kind: "upload", doc, fileName })}
+            onStageReset={() => stage("cashSales", { kind: "reset" })}
+            onDiscardPending={() => discard("cashSales")}
+            onTemplate={downloadCashSalesTemplate}
+            emptyLabel="Not provided"
+            optional
           />
         </DsStack>
 

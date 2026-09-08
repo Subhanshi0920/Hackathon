@@ -15,7 +15,7 @@
 // business), so it's exported directly below from the bundled documents.
 // ---------------------------------------------------------------------------
 
-import businessProfiles from "./documents/businessProfile.json";
+import businessProfiles from "./documents/businessProfile.json" with { type: "json" };
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 const PAID_EPSILON = 0.005; // lakh-rupee rounding tolerance
@@ -91,11 +91,18 @@ function averageOf(values) {
  * @param {object} documents - { gstr3b, gstr1, bankTransactions }
  */
 export function buildCalculations(documents) {
-  const { gstr3b, gstr1, bankTransactions } = documents;
+  const { gstr3b, gstr1, bankTransactions, cashSales } = documents;
   const gstReturns = gstr3b.returns;
   const bankMonthly = bankTransactions.monthly;
   const topBuyers = gstr1.topBuyers;
   const previousFyTotalLakhs = gstr3b.previousFinancialYear.totalTurnoverLakhs;
+  // cashSales (offline bills) is optional — defaults to "none reported" so
+  // existing businesses/documents that never supply it behave exactly as
+  // before. See uploadParsers.js's parseCashSalesFile for why this exists:
+  // a cash-heavy small shop's real revenue isn't fully visible in its bank
+  // statement, even though it's fully declared to GST.
+  const cashSalesByPeriod = new Map((cashSales?.monthly ?? []).map((c) => [c.period, c.cashSalesLakhs]));
+  const cashSalesLakhsFor = (period) => cashSalesByPeriod.get(period) ?? 0;
 
   // ---- GST filing compliance ------------------------------------------------
   const MONTHS = gstReturns.map((r) => r.label);
@@ -177,7 +184,10 @@ export function buildCalculations(documents) {
 
     for (const lag of candidateLags) {
       const pairs = bankMonthly
-        .map((b) => ({ turnover: turnoverMonthsBefore(b.period, lag), receipts: b.customerReceiptsLakhs }))
+        .map((b) => ({
+          turnover: turnoverMonthsBefore(b.period, lag),
+          receipts: b.customerReceiptsLakhs + cashSalesLakhsFor(b.period),
+        }))
         .filter((p) => p.turnover != null);
 
       const sumXY = pairs.reduce((s, p) => s + p.turnover * p.receipts, 0);
@@ -208,7 +218,7 @@ export function buildCalculations(documents) {
     const result = [];
 
     for (const b of bankMonthly) {
-      const net = +(b.customerReceiptsLakhs + b.otherInflowsLakhs - b.totalOutflowsLakhs).toFixed(2);
+      const net = +(b.customerReceiptsLakhs + b.otherInflowsLakhs + cashSalesLakhsFor(b.period) - b.totalOutflowsLakhs).toFixed(2);
       result.push({ period: b.period, m: b.label, actual: net, base: null, low: null, high: null });
     }
 
@@ -239,11 +249,20 @@ export function buildCalculations(documents) {
   function describeCashFlowModel() {
     const { lagMonths, collectionRatePct } = calibrateCollectionModel();
     const concentration = computeBuyerConcentration();
+    const totalCashSales = computeTotalCashSalesLakhs();
     return {
       lagMonths,
       collectionRatePct,
       stressAssumption: `Top buyer (${concentration.topBuyerName}) accounts for ${concentration.topBuyerPct}% of revenue — stressed case assumes their payment doesn't land that month.`,
+      cashSalesNote:
+        totalCashSales > 0
+          ? `Includes ₹${totalCashSales}L in cash sales evidenced by uploaded bills — without these, the collection rate would understate actual money collected.`
+          : null,
     };
+  }
+
+  function computeTotalCashSalesLakhs() {
+    return +[...cashSalesByPeriod.values()].reduce((sum, v) => sum + v, 0).toFixed(2);
   }
 
   const CASHFLOW = computeCashFlowForecast();
@@ -296,6 +315,7 @@ export function buildCalculations(documents) {
     calibrateCollectionModel,
     computeCashFlowForecast,
     describeCashFlowModel,
+    computeTotalCashSalesLakhs,
     CASHFLOW,
     computeWorkingCapitalRecommendation,
   };

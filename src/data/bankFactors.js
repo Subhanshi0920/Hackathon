@@ -2,7 +2,14 @@
 // bankFactors.js — turns the "beyond-financials" signals a bank actually
 // looks at (social presence, CIBIL, ITRs, balance sheets, ownership, bank
 // conduct, online reputation, location, competition) into a single set of
-// normalized (0-100) factor scores plus one weighted Bank Confidence Score.
+// normalized (0-100) factor scores, then feeds those scores into the
+// TRAINED ML model (mlHealthScore.js) to produce one Bank Confidence Score.
+//
+// Every individual factor score (CIBIL, GST, balance sheet, etc.) is still
+// a real, deterministic calculation — that part cannot be "replaced by ML"
+// because those calculations are what the model's input features ARE. The
+// one step that used to be a hand-picked weighted-average formula — final
+// aggregation into a single score — is now the learned model instead.
 //
 // This is intentionally self-contained: it reads businessRiskFactors.json
 // directly and doesn't depend on calculations.js/DataContext, mirroring how
@@ -10,8 +17,9 @@
 // the GST/bank-statement calculation pipeline (see calculations.js header).
 // ---------------------------------------------------------------------------
 
-import riskProfiles from "./documents/businessRiskFactors.json";
+import riskProfiles from "./documents/businessRiskFactors.json" with { type: "json" };
 import { extractCityFromAddress, getCityTier } from "./cityTiers.js";
+import { computeMlHealthScore } from "./mlHealthScore.js";
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
 const round1 = (n) => Math.round(n * 10) / 10;
@@ -52,7 +60,7 @@ export function getBusinessRiskProfileByGstin(gstin) {
   return riskProfiles.find((p) => p.gstin === gstin) || null;
 }
 
-export { competitiveIntensityOf };
+export { competitiveIntensityOf, scoreRevenueReconciliation };
 
 // ---- Individual factor scorers (each returns 0-100) -----------------------
 
@@ -148,6 +156,27 @@ function scoreGst(gstProfile, liveCompliancePct) {
   return clamp(statusScore * 0.2 + compliancePct * 0.8 - cancellationPenalty);
 }
 
+// ---------------------------------------------------------------------------
+// Revenue Reconciliation — does the money this business can actually be
+// shown to have collected (bank receipts + cash sales evidenced by bills)
+// match what it declared to GST? This is exactly
+// calculations.js's calibrateCollectionModel()'s collectionRatePct,
+// reframed as a factor score. Tied to the MANDATORY GST/Bank upload, so —
+// like GST itself — it's always computable and never conditionally absent.
+//
+// 100% = perfect reconciliation. Under-collection is penalized more
+// steeply than over-collection: a business collecting meaningfully LESS
+// than its declared turnover is either genuinely struggling to collect, or
+// its declared revenue is overstated — either way, a real lending risk. A
+// business collecting somewhat MORE than declared (timing effects, a
+// strong recent month) is a much milder concern.
+// ---------------------------------------------------------------------------
+function scoreRevenueReconciliation(collectionRatePct) {
+  const pct = clamp(collectionRatePct, 0, 300); // guard against wild regression-fit outliers
+  const deviation = pct - 100;
+  return deviation >= 0 ? clamp(100 - deviation * 0.5) : clamp(100 + deviation * 1.2);
+}
+
 function scoreOwnership(ownership) {
   const countScore = ownership.numberOfOwners === 1 ? 65 : ownership.numberOfOwners <= 4 ? 100 : 75;
   const stabilityScore = clamp((ownership.ownershipStabilityYears / 8) * 100);
@@ -204,14 +233,15 @@ function scoreCompetition(competition) {
 // ---- Weights (sum to 100) --------------------------------------------------
 
 const WEIGHTS = {
-  cibil: 15,
-  gst: 10,
-  itr: 10,
-  balanceSheet: 10,
-  businessAge: 8,
-  bankAccounts: 8,
-  googleRating: 8,
-  onlineReviews: 8,
+  cibil: 14,
+  gst: 9,
+  itr: 9,
+  balanceSheet: 9,
+  revenueReconciliation: 8,
+  businessAge: 7,
+  bankAccounts: 7,
+  googleRating: 7,
+  onlineReviews: 7,
   socialMedia: 5,
   ownership: 5,
   provisionalBalanceSheet: 5,
@@ -231,44 +261,90 @@ const WEIGHTS = {
  */
 export function buildBankFactorAssessment(profile, options = {}) {
   const liveCompliancePct = options.liveGstCompliancePct;
+  // Defaults to 100 (perfect reconciliation) only when no collection-rate
+  // data is available at all — e.g. a caller that hasn't wired this up yet.
+  // Real callers should always pass calculations.js's
+  // describeCashFlowModel().collectionRatePct, which is tied to the
+  // mandatory GST/Bank upload and reacts to cash-sales uploads.
+  const collectionRatePct = options.collectionRatePct ?? 100;
+
+  // socialMedia / googleRating / onlineReviews are the three factors this
+  // app treats as conditionally optional (see the two presence flags below)
+  // — a purely offline/B2B business legitimately has no social media
+  // presence, and not every business maintains an active Google listing.
+  // Rather than defaulting an absent factor to a score (which would either
+  // unfairly reward or punish something that simply isn't there), we skip
+  // it from the weighted average entirely and renormalize the remaining
+  // factors' weights so they still sum to 100%.
+  const hasSocialMedia = Boolean(profile.socialMedia);
+  const hasGoogleListing = Boolean(profile.googleRating) && Boolean(profile.onlineReviews);
+
   const raw = {
-    socialMedia: scoreSocialMedia(profile.socialMedia),
     businessAge: scoreBusinessAge(profile.businessAge),
     cibil: scoreCibil(profile.cibil),
     itr: scoreItr(profile.itr),
     balanceSheet: scoreBalanceSheet(profile.balanceSheet),
     provisionalBalanceSheet: scoreProvisionalBalanceSheet(profile.provisionalBalanceSheet, profile.balanceSheet),
     gst: scoreGst(profile.gstProfile, liveCompliancePct),
+    revenueReconciliation: scoreRevenueReconciliation(collectionRatePct),
     ownership: scoreOwnership(profile.ownership),
     bankAccounts: scoreBankAccounts(profile.bankAccounts),
-    googleRating: scoreGoogleRating(profile.googleRating),
-    onlineReviews: scoreOnlineReviews(profile.onlineReviews),
     location: scoreLocation(profile.location),
     competition: scoreCompetition(profile.competition),
   };
+  if (hasSocialMedia) raw.socialMedia = scoreSocialMedia(profile.socialMedia);
+  if (hasGoogleListing) {
+    raw.googleRating = scoreGoogleRating(profile.googleRating);
+    raw.onlineReviews = scoreOnlineReviews(profile.onlineReviews);
+  }
 
   const displayedCompliancePct = liveCompliancePct ?? profile.gstProfile.returnFilingConsistencyPct;
   const derivedIntensity = competitiveIntensityOf(profile.competition.competitorCountNearby);
 
-  const FACTORS = [
+  const ALL_FACTOR_DEFS = [
     { key: "cibil", label: "CIBIL Score", value: profile.cibil.score, unit: "" },
     { key: "gst", label: "GST Standing", value: round1(displayedCompliancePct), unit: "%" },
+    { key: "revenueReconciliation", label: "Revenue Reconciliation", value: round1(collectionRatePct), unit: "% collected vs. declared" },
     { key: "itr", label: "ITR Track Record", value: profile.itr.length, unit: " yrs filed" },
     { key: "balanceSheet", label: "Balance Sheet", value: profile.balanceSheet.netWorthLakhs, unit: "L net worth" },
     { key: "businessAge", label: "Business Age", value: round1(profile.businessAge.yearsInOperation), unit: " yrs" },
     { key: "bankAccounts", label: "Bank Conduct", value: profile.bankAccounts.length, unit: " a/c" },
-    { key: "googleRating", label: "Google Rating", value: profile.googleRating.rating, unit: "★" },
-    { key: "onlineReviews", label: "Online Reviews", value: profile.onlineReviews.positivePct, unit: "% positive" },
-    { key: "socialMedia", label: "Social Media Presence", value: profile.socialMedia.platforms.reduce((s, p) => s + p.followers, 0), unit: " followers" },
+    ...(hasGoogleListing ? [{ key: "googleRating", label: "Google Rating", value: profile.googleRating.rating, unit: "★" }] : []),
+    ...(hasGoogleListing ? [{ key: "onlineReviews", label: "Online Reviews", value: profile.onlineReviews.positivePct, unit: "% positive" }] : []),
+    ...(hasSocialMedia
+      ? [{ key: "socialMedia", label: "Social Media Presence", value: profile.socialMedia.platforms.reduce((s, p) => s + p.followers, 0), unit: " followers" }]
+      : []),
     { key: "ownership", label: "Ownership Stability", value: profile.ownership.numberOfOwners, unit: " owner(s)" },
     { key: "provisionalBalanceSheet", label: "Provisional B/S Trend", value: profile.provisionalBalanceSheet.netWorthLakhs, unit: "L net worth (H1)" },
     { key: "location", label: "Location Quality", value: profile.location.footTraffic, unit: "" },
     { key: "competition", label: "Competitive Position", value: derivedIntensity, unit: "" },
-  ].map((f) => ({ ...f, score: round1(raw[f.key]), weight: WEIGHTS[f.key] }));
+  ];
 
-  const overallScore = round1(
-    FACTORS.reduce((sum, f) => sum + f.score * (f.weight / 100), 0)
-  );
+  // Renormalize: only present factors' weights are scaled up to still sum to 100.
+  const presentWeightSum = ALL_FACTOR_DEFS.reduce((sum, f) => sum + WEIGHTS[f.key], 0);
+  const FACTORS = ALL_FACTOR_DEFS.map((f) => ({
+    ...f,
+    score: round1(raw[f.key]),
+    // NOTE: `weight` here is now purely PRESENTATIONAL — it drives the
+    // percentage bars/labels shown in RiskFactorsCard.jsx and
+    // OverviewSummary.jsx ("this factor is roughly X% of the picture"),
+    // but it is NOT what actually produces overallScore below anymore.
+    // The real aggregation is the trained model (see next block).
+    weight: round1((WEIGHTS[f.key] / presentWeightSum) * 100),
+  }));
+
+  // ---------------------------------------------------------------------
+  // overallScore now comes from the TRAINED model, not a hand-picked
+  // weighted average. The 13 sub-scores above (each already a real
+  // calculation — CIBIL formula, balance-sheet ratios, GST compliance,
+  // etc.) are the model's input features; this is the one step — final
+  // aggregation into a single number — that used to be a fixed formula
+  // and is now something learned from 2,500 synthetic loan outcomes
+  // (see ml/train_model.py). No AI/LLM call is involved — this runs
+  // instantly, client-side, from ml/model_weights.json.
+  // ---------------------------------------------------------------------
+  const mlResult = computeMlHealthScore({ FACTORS }, { hasGoogleListing, hasSocialMedia });
+  const overallScore = mlResult.score;
 
   const band =
     overallScore >= 75 ? "Strong — Bank-ready" :
@@ -276,5 +352,5 @@ export function buildBankFactorAssessment(profile, options = {}) {
     overallScore >= 35 ? "Weak — Needs mitigants" :
     "Poor — High risk";
 
-  return { FACTORS, overallScore, band };
+  return { FACTORS, overallScore, band, defaultProbability: mlResult.defaultProbability };
 }
